@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>Заявка {{ submission.submission_id }}</h1>
+  <p><strong>Статус:</strong> <span class="status">{{ submission.status }}</span></p>
+  <p><strong>Название:</strong> {{ submission.metadata.title_ru or "—" }}</p>
+  <p><strong>Автор:</strong> {{ submission.author_contact.full_name }} — {{ submission.author_contact.email }}</p>
+  <p><strong>Организация:</strong> {{ submission.author_contact.organization or "—" }}</p>
+  <p><strong>Секция:</strong> {{ submission.metadata.section or "—" }}</p>
+</section>
+
+<section class="grid two">
+  <div class="card">
+    <h2>Файлы</h2>
+    <ul class="links">
+      <li><a href="/download/{{ submission.submission_id }}/original_docx">Скачать исходный DOCX</a></li>
+      <li><a href="/download/{{ submission.submission_id }}/formatted_docx">Скачать оформленный DOCX</a></li>
+      <li><a href="/download/{{ submission.submission_id }}/formatted_pdf">Скачать PDF</a></li>
+      <li><a href="/download/{{ submission.submission_id }}/check_report">Скачать отчёт проверок</a></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Действия автора</h2>
+    <form action="/status/{{ submission.submission_id }}/confirm" method="post">
+      <button class="button" type="submit">Подтвердить итоговый вариант</button>
+    </form>
+    <hr>
+    <form action="/status/{{ submission.submission_id }}/revision" method="post" enctype="multipart/form-data">
+      <label>Загрузить исправленную версию DOCX
+        <input name="revision_file" type="file" accept=".docx" required>
+      </label>
+      <button class="button secondary" type="submit">Загрузить исправление</button>
+    </form>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Замечания и проверки</h2>
+  {% if submission.checks %}
+    {% for check in submission.checks %}
+      <div class="check">
+        <h3>{{ check.title or check.check_id }}</h3>
+        <p><strong>Статус:</strong> {{ check.status }} | <strong>Риск:</strong> {{ check.risk_level }}</p>
+        <p>{{ check.summary }}</p>
+        {% if check.result.warnings %}
+          <ul>
+          {% for warning in check.result.warnings %}
+            <li>{{ warning.message }} <em>{{ warning.recommendation }}</em></li>
+          {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>Пока нет результатов проверок. Когда внешний модуль сохранит отчёт, он появится здесь.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>История статусов</h2>
+  <table>
+    <thead><tr><th>Когда</th><th>Из</th><th>В</th><th>Кто</th><th>Комментарий</th></tr></thead>
+    <tbody>
+    {% for item in submission.status_history %}
+      <tr>
+        <td>{{ item.changed_at }}</td>
+        <td>{{ item.from_status or "—" }}</td>
+        <td>{{ item.to_status }}</td>
+        <td>{{ item.changed_by }}</td>
+        <td>{{ item.comment }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

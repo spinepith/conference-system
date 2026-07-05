@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>Постоянно действующая научная конференция по искусственному интеллекту</h1>
+  <p>Загрузите материал в формате DOCX, получите номер заявки и отслеживайте статус обработки.</p>
+  <a class="button" href="/submit">Подать материал</a>
+</section>
+
+<section class="card">
+  <h2>Последние заявки</h2>
+  {% if submissions %}
+  <table>
+    <thead>
+      <tr><th>Номер</th><th>Название</th><th>Статус</th><th>Автор</th></tr>
+    </thead>
+    <tbody>
+      {% for item in submissions %}
+      <tr>
+        <td><a href="/status/{{ item.submission_id }}">{{ item.submission_id }}</a></td>
+        <td>{{ item.metadata.title_ru or "—" }}</td>
+        <td><span class="status">{{ item.status }}</span></td>
+        <td>{{ item.author_contact.full_name or "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>Пока нет заявок.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1>Подача материала</h1>
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+  <form action="/submit" method="post" enctype="multipart/form-data" class="form">
+    <label>ФИО контактного автора
+      <input name="full_name" required placeholder="Иванов Иван Иванович">
+    </label>
+    <label>E-mail
+      <input name="email" type="email" required placeholder="ivanov@example.com">
+    </label>
+    <label>Организация
+      <input name="organization" placeholder="ТГТУ">
+    </label>
+    <label>Название материала
+      <input name="title_ru" required placeholder="Название материала">
+    </label>
+    <label>Секция конференции
+      <input name="section" placeholder="Искусственный интеллект в образовании">
+    </label>
+    <label>ФИО соавторов через запятую
+      <input name="coauthors" placeholder="Петров П.П., Сидоров С.С.">
+    </label>
+    <label>Научный руководитель
+      <input name="supervisor" placeholder="Петров П.П.">
+    </label>
+    <label>Аннотация
+      <textarea name="abstract_ru" rows="4" placeholder="Краткая аннотация"></textarea>
+    </label>
+    <label>Ключевые слова через запятую
+      <input name="keywords_ru" placeholder="ИИ, образование, анализ текста">
+    </label>
+    <label>Файл DOCX
+      <input name="docx_file" type="file" accept=".docx" required>
+    </label>
+    <button class="button" type="submit">Отправить материал</button>
+  </form>
+</section>
+{% endblock %}
