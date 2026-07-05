@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ContentValidation.TestConsole/ContentValidation.TestConsole.csproj" />
+  <Project Path="ContentValidation/ContentValidation.csproj" />
+</Solution>
