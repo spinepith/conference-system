@@ -1,4 +1,12 @@
 <Solution>
+  <Folder Name="/Элементы решения/">
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Элементы решения/bin/" />
+  <Folder Name="/Элементы решения/storage/" />
+  <Folder Name="/Элементы решения/Tests/" />
+  <Project Path="ContentValidation.Cli/ContentValidation.Cli.csproj" />
   <Project Path="ContentValidation.TestConsole/ContentValidation.TestConsole.csproj" />
   <Project Path="ContentValidation/ContentValidation.csproj" />
 </Solution>

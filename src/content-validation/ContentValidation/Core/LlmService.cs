@@ -1,44 +1,89 @@
-﻿using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Text.Json;
+using ContentValidation.Services;
+
 
 namespace ContentValidation.Core;
 
+internal class LlmService {
+    private readonly LlmClient _client;
+    private readonly string _promptsFolder;
+    private readonly ValidationLogger _logger;
 
-file record OpenAiRequest(string Model, object[] Messages, double Temperature, object ResponseFormat);
-file record OpenAiResponse(Choice[] Choices);
-file record Choice(Message Message);
-file record Message(string Role, string Content);
-
-public class LlmService : ILlmProvider {
-    private readonly HttpClient httpClient;
-    private readonly string modelName;
-
-    public LlmService(string apiKey, string baseUrl = "https://api.openai.com/v1/", string modelName = "gpt-4o-mini") {
-        httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        this.modelName = modelName;
+    internal LlmService(LlmClient client, string promptsFolder, ValidationLogger logger) {
+        _client        = client;
+        _promptsFolder = promptsFolder;
+        _logger        = logger;
     }
 
-    public async Task<string> GetResponseAsync(string systemPrompt, string userText) {
-        var request = new OpenAiRequest(
-            Model: modelName,
-            Messages: new object[] {
-                new { role = "system", content = systemPrompt },
-                new { role = "user", content = userText }
-            },
-            Temperature: 0.1,
-            ResponseFormat: new { type = "json_object" }
-        );
+    internal async Task<string?> AskAsync(string promptFileName, string text, string checkId) {
+        try {
+            string prompt = LoadPrompt(promptFileName);
 
-        var response = await httpClient.PostAsJsonAsync("chat/completions", request);
+            if (string.IsNullOrEmpty(prompt)) {
+                _logger.Error($"Файл промпта не найден: {promptFileName}");
+                return null;
+            }
 
-        if (!response.IsSuccessStatusCode) {
-            var error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"LLM API Error: {response.StatusCode} - {error}");
+            int attempt = 0;
+            int maxAttempts = 3;
+
+            while (attempt < maxAttempts) {
+                attempt++;
+
+                try {
+                    string response = await _client.SendRequestAsync(prompt, text);
+                    bool isValidJson = IsValidJson(response);
+
+                    _logger.LogLlmCall(checkId, promptFileName, text, response, attempt, isValidJson);
+
+                    if (isValidJson)
+                        return response;
+
+                    _logger.Warn($"Проверка {checkId} - Невалидный JSON {attempt}/{maxAttempts}");
+
+                    if (attempt < maxAttempts)
+                        await Task.Delay(1000);
+                }
+                catch (Exception ex) {
+                    _logger.Error($"Проверка {checkId} - ошибка ответа LLM {attempt}/{maxAttempts}", ex);
+
+                    if (attempt < maxAttempts)
+                        await Task.Delay(1000);
+                }
+            }
+
+            _logger.Error($"Проверка {checkId} - Все {maxAttempts} попытки завершились неудачно");
+            return null;
+        }
+        catch (Exception ex) {
+            _logger.Error($"Проверка {checkId} - Критическая ошибка при ответе.", ex);
+            return null;
+        }
+    }
+
+    private string LoadPrompt(string promptFileName) {
+        try {
+            string path = Path.Combine(_promptsFolder, promptFileName);
+
+            if (!File.Exists(path))
+                return string.Empty;
+
+            return File.ReadAllText(path);
+        }
+        catch {
+            return string.Empty;
+        }
+    }
+
+    private bool IsValidJson(string json) {
+        if (!string.IsNullOrWhiteSpace(json)) {
+            try {
+                JsonDocument.Parse(json);
+                return true;
+            }
+            catch { }
         }
 
-        var responseData = await response.Content.ReadFromJsonAsync<OpenAiResponse>();
-
-        return responseData?.Choices?[0].Message.Content ?? "{}";
+        return false;
     }
 }
