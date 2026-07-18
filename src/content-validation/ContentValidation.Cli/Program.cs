@@ -114,7 +114,7 @@ return await rootCommand.InvokeAsync(args);
 static void LoadEnvFile() {
     var current = new DirectoryInfo(Directory.GetCurrentDirectory());
 
-    while (current != null) {
+    while (current is not null) {
         var envPath = Path.Combine(current.FullName, ".env");
         if (File.Exists(envPath)) {
             Env.Load(envPath);
