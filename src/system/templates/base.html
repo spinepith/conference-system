@@ -1,0 +1,27 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Conference System MVP{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="{% url 'index' %}">Conference System MVP</a>
+      <nav>
+        <a href="{% url 'index' %}">Заявки</a>
+        <a href="{% url 'submit' %}">Подать материал</a>
+        <a href="{% url 'api_index' %}">API</a>
+        <a href="/admin/">Админка</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

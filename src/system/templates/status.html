@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ submission.submission_id }}{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div class="section-title">
+    <div>
+      <h1>Заявка <code>{{ submission.submission_id }}</code></h1>
+      <p class="muted">Создана: {{ submission.created_at|date:'d.m.Y H:i' }}</p>
+    </div>
+    <span class="status big">{{ submission.status }}</span>
+  </div>
+
+  <div class="grid two">
+    <div>
+      <h3>Автор</h3>
+      <p><b>ФИО:</b> {{ submission.author_contact.full_name|default:'—' }}</p>
+      <p><b>E-mail:</b> {{ submission.author_contact.email|default:'—' }}</p>
+      <p><b>Организация:</b> {{ submission.author_contact.organization|default:'—' }}</p>
+    </div>
+    <div>
+      <h3>Материал</h3>
+      <p><b>Название:</b> {{ submission.metadata.title_ru|default:'—' }}</p>
+      <p><b>Секция:</b> {{ submission.metadata.section|default:'—' }}</p>
+      <p><b>Научный руководитель:</b> {{ submission.metadata.supervisor|default:'—' }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Файлы</h2>
+  {% if submission.files.all %}
+    <ul class="files-list">
+      {% for file in submission.files.all %}
+        <li><span>{{ file.file_type }}</span><a href="{% url 'download_file' file.id %}">Скачать</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">Файлы ещё не прикреплены.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Действия автора</h2>
+  <form method="post" action="{% url 'confirm_submission' submission.submission_id %}" class="inline-form">
+    {% csrf_token %}
+    <button class="button" type="submit">Подтвердить итоговый вариант</button>
+  </form>
+
+  <form method="post" action="{% url 'upload_revision' submission.submission_id %}" enctype="multipart/form-data" class="revision-form">
+    {% csrf_token %}
+    <label>Загрузить исправленную версию DOCX
+      <input type="file" name="revision_docx" accept=".docx" required>
+    </label>
+    <button class="button secondary" type="submit">Загрузить исправление</button>
+  </form>
+</section>
+
+<section class="grid two">
+  <div class="card">
+    <h2>Результаты проверок</h2>
+    {% if submission.checks.all %}
+      {% for check in submission.checks.all %}
+        <article class="check">
+          <h3>{{ check.title|default:check.check_id }}</h3>
+          <p><b>Статус:</b> {{ check.status }} | <b>Риск:</b> {{ check.risk_level }}</p>
+          <p>{{ check.summary|default:'Описание отсутствует.' }}</p>
+        </article>
+      {% endfor %}
+    {% else %}
+      <p class="empty">Результаты проверок ещё не сохранены.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>История статусов</h2>
+    {% if submission.status_history.all %}
+      <ul class="timeline">
+        {% for row in submission.status_history.all %}
+          <li>
+            <b>{{ row.from_status|default:'создание' }} → {{ row.to_status }}</b><br>
+            <span>{{ row.changed_at|date:'d.m.Y H:i' }} · {{ row.changed_by }}</span><br>
+            <span>{{ row.comment }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">История пока пуста.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card">
+  <h2>Workflow-этапы</h2>
+  {% if submission.workflow_results.all %}
+    <table>
+      <thead><tr><th>Этап</th><th>Статус</th><th>Сообщение</th></tr></thead>
+      <tbody>
+      {% for result in submission.workflow_results.all %}
+        <tr>
+          <td>{{ result.stage_id }}</td>
+          <td>{{ result.status }}</td>
+          <td>{{ result.message }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">Workflow ещё не запускался.</p>
+  {% endif %}
+</section>
+{% endblock %}

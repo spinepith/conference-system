@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block title %}Подать материал{% endblock %}
+
+{% block content %}
+<section class="card narrow">
+  <h1>Подача материала</h1>
+  <p class="muted">Заполните сведения о материале и загрузите файл в формате DOCX.</p>
+
+  <form class="form" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="error">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <label>
+      {{ form.full_name.label }}
+      {{ form.full_name }}
+      {{ form.full_name.errors }}
+    </label>
+
+    <label>
+      {{ form.email.label }}
+      {{ form.email }}
+      {{ form.email.errors }}
+    </label>
+
+    <label class="organization-field">
+      {{ form.organization.label }}
+      <div class="autocomplete" data-autocomplete>
+        {{ form.organization }}
+        <div class="autocomplete-menu" id="organization-menu" role="listbox" hidden></div>
+      </div>
+      {{ form.organization.errors }}
+    </label>
+
+    <label>
+      {{ form.title_ru.label }}
+      {{ form.title_ru }}
+      {{ form.title_ru.errors }}
+    </label>
+
+    <label>
+      {{ form.section.label }}
+      {{ form.section }}
+      {{ form.section.errors }}
+    </label>
+
+    <div class="authors-block">
+      <h3>Авторы материала</h3>
+      <p class="muted">Добавьте соавторов отдельно. Порядок авторов будет сохранён.</p>
+
+      {{ form.authors_json }}
+
+      <div id="authors-container"></div>
+      <button type="button" class="button secondary" id="add-author">+ Добавить соавтора</button>
+    </div>
+
+    <label>
+      {{ form.supervisor.label }}
+      {{ form.supervisor }}
+      {{ form.supervisor.errors }}
+    </label>
+
+    <label>
+      {{ form.abstract_ru.label }}
+      {{ form.abstract_ru }}
+      {{ form.abstract_ru.errors }}
+    </label>
+
+    <label>
+      {{ form.keywords_ru.label }}
+      {{ form.keywords_ru }}
+      {{ form.keywords_ru.errors }}
+    </label>
+
+    <label>
+      {{ form.docx_file.label }}
+      {{ form.docx_file }}
+      {{ form.docx_file.errors }}
+    </label>
+
+    <button class="button" type="submit">Отправить материал</button>
+  </form>
+</section>
+
+
+<script>
+(function(){
+  const container=document.getElementById("authors-container");
+  const hidden=document.getElementById("id_authors_json");
+  const add=document.getElementById("add-author");
+  let authors=[];
+
+  function render(){
+    container.innerHTML="";
+    authors.forEach((a,i)=>{
+      const box=document.createElement("div");
+      box.className="author-card";
+      box.innerHTML=`<b>Соавтор ${i+1}</b>
+      <input class="a-name" placeholder="ФИО" value="${a.full_name||''}">
+      <input class="a-email" placeholder="E-mail" value="${a.email||''}">
+      <div class="autocomplete author-org-wrapper">
+        <input class="a-org" autocomplete="off" placeholder="Организация" value="${a.organization||''}">
+        <div class="autocomplete-menu author-org-menu" hidden></div>
+      </div>
+      <button type="button" class="remove-author">Удалить</button>`;
+      box.querySelectorAll('input').forEach(x=>x.addEventListener('input',()=>{
+        a.full_name=box.querySelector('.a-name').value;
+        a.email=box.querySelector('.a-email').value;
+        a.organization=box.querySelector('.a-org').value;
+        hidden.value=JSON.stringify(authors);
+      }));
+      box.querySelector('.remove-author').onclick=()=>{authors.splice(i,1); render();};
+      container.appendChild(box);
+    });
+    hidden.value=JSON.stringify(authors);
+  }
+  add.onclick=()=>{authors.push({full_name:'',email:'',organization:''});render();};
+  render();
+})();
+</script>
+
+
+<script>
+(function () {
+  const container = document.getElementById('authors-container');
+  if (!container) return;
+
+  function initAuthorAutocomplete(input, menu) {
+    let items = [];
+    let timer = null;
+
+    function hide() {
+      menu.hidden = true;
+      menu.innerHTML = '';
+    }
+
+    function show() {
+      menu.innerHTML = '';
+      if (!items.length) {
+        const empty = document.createElement('div');
+        empty.className = 'autocomplete-empty';
+        empty.textContent = 'Новая организация будет создана';
+        menu.appendChild(empty);
+      } else {
+        items.forEach(item => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'autocomplete-option';
+          btn.textContent = item.name;
+          btn.addEventListener('mousedown', e => {
+            e.preventDefault();
+            input.value = item.name;
+            input.dispatchEvent(new Event('input'));
+            hide();
+          });
+          menu.appendChild(btn);
+        });
+      }
+      menu.hidden = false;
+    }
+
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (!q) {
+        hide();
+        return;
+      }
+      timer = setTimeout(async () => {
+        const response = await fetch('/api/organizations/?q=' + encodeURIComponent(q) + '&limit=10');
+        items = response.ok ? await response.json() : [];
+        show();
+      }, 150);
+    });
+
+    document.addEventListener('click', e => {
+      if (e.target !== input && !menu.contains(e.target)) hide();
+    });
+  }
+
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('.author-org-wrapper').forEach(wrapper => {
+      const input = wrapper.querySelector('.a-org');
+      const menu = wrapper.querySelector('.author-org-menu');
+      if (input && menu && !input.dataset.ready) {
+        input.dataset.ready = '1';
+        initAuthorAutocomplete(input, menu);
+      }
+    });
+  });
+
+  observer.observe(container, {childList:true, subtree:true});
+})();
+</script>
+
+<script>
+(function () {
+  const input = document.getElementById('id_organization');
+  const menu = document.getElementById('organization-menu');
+  let items = [];
+  let activeIndex = -1;
+  let timer = null;
+
+  if (!input || !menu) return;
+  input.setAttribute('autocomplete', 'off');
+
+  function hideMenu() {
+    menu.hidden = true;
+    menu.innerHTML = '';
+    activeIndex = -1;
+  }
+
+  function render() {
+    menu.innerHTML = '';
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'autocomplete-empty';
+      empty.textContent = 'Совпадений нет. Новая организация будет сохранена.';
+      menu.appendChild(empty);
+      menu.hidden = false;
+      return;
+    }
+    items.forEach((item, index) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'autocomplete-option' + (index === activeIndex ? ' active' : '');
+      option.textContent = item.name;
+      option.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        input.value = item.name;
+        hideMenu();
+      });
+      menu.appendChild(option);
+    });
+    menu.hidden = false;
+  }
+
+  async function searchOrganizations(query) {
+    const response = await fetch('/api/organizations/?q=' + encodeURIComponent(query) + '&limit=10');
+    if (!response.ok) return [];
+    return await response.json();
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const query = input.value.trim();
+    if (!query) {
+      hideMenu();
+      return;
+    }
+    timer = setTimeout(async () => {
+      items = await searchOrganizations(query);
+      activeIndex = items.length ? 0 : -1;
+      render();
+    }, 160);
+  });
+
+  input.addEventListener('keydown', (event) => {
+    if (menu.hidden) return;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (items.length) activeIndex = (activeIndex + 1) % items.length;
+      render();
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (items.length) activeIndex = (activeIndex - 1 + items.length) % items.length;
+      render();
+    }
+    if (event.key === 'Enter' && activeIndex >= 0 && items[activeIndex]) {
+      event.preventDefault();
+      input.value = items[activeIndex].name;
+      hideMenu();
+    }
+    if (event.key === 'Escape') {
+      hideMenu();
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!menu.contains(event.target) && event.target !== input) hideMenu();
+  });
+})();
+</script>
+{% endblock %}
