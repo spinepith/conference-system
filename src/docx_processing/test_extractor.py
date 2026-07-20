@@ -1,87 +1,92 @@
+"""Manual smoke test for the independent DOCX-processing module.
+
+Usage from the repository root::
+
+    python -m src.docx_processing.test_extractor path/to/article.docx
+
+Or with ``src`` added to ``PYTHONPATH``::
+
+    python src/docx_processing/test_extractor.py path/to/article.docx
+"""
+from __future__ import annotations
+
+import argparse
 import json
-import os
 import sys
-from typing import Any, Dict
+from pathlib import Path
 
-from docx_processing.metadata_parser import MetadataParser
-from docx_processing.formatter import MaterialFormatter
+# Allow direct execution without installing the package.
+MODULE_DIR = Path(__file__).resolve().parent
+SRC_ROOT = MODULE_DIR.parent
+PROJECT_ROOT = SRC_ROOT.parent
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
+from docx_processing.service import extract_metadata, format_to_template
 
 
-def main():
-    # --- 1. Настройка входных и выходных файлов ---
-    # Исходная статья автора и твой готовый шаблон
-    input_docx_path = "algoritm_igas.docx"
-    template_path = "conference_template_v1.docx"
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run the DOCX module smoke test.")
+    parser.add_argument("input_docx", type=Path, help="Source DOCX article.")
+    parser.add_argument(
+        "--template",
+        type=Path,
+        default=PROJECT_ROOT / "templates" / "conference_template_v1.docx",
+        help="Conference template path.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=PROJECT_ROOT / "storage" / "docx_processing_test",
+        help="Directory for generated files.",
+    )
+    return parser.parse_args()
 
-    # Папка, куда сложим все итоговые артефакты
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
 
-    extracted_json_path = os.path.join(output_dir, "extracted_metadata.json")
-    formatted_docx_path = os.path.join(output_dir, "formatted_material.docx")
-    report_json_path = os.path.join(output_dir, "formatting_report.json")
+def main() -> int:
+    args = parse_args()
+    input_path = args.input_docx.resolve()
+    template_path = args.template.resolve()
+    output_dir = args.output_dir.resolve()
 
-    # --- 2. Проверка наличия исходных файлов на диске ---
-    if not os.path.exists(input_docx_path):
-        print(f"[ОШИБКА] Исходный файл '{input_docx_path}' не найден!", file=sys.stderr)
-        return
+    if not input_path.exists():
+        print(f"[ERROR] Source DOCX not found: {input_path}", file=sys.stderr)
+        return 1
+    if not template_path.exists():
+        print(f"[ERROR] Template not found: {template_path}", file=sys.stderr)
+        return 1
 
-    if not os.path.exists(template_path):
-        print(f"[ОШИБКА] Файл шаблона '{template_path}' не найден!", file=sys.stderr)
-        return
+    output_dir.mkdir(parents=True, exist_ok=True)
+    metadata_path = output_dir / "extracted_metadata.json"
+    formatted_path = output_dir / "formatted_material.docx"
+    report_path = output_dir / "formatting_report.json"
 
-    # --- 3. Этап 1: Извлечение метаданных (MetadataParser) ---
-    print(f"[1/3] Извлечение метаданных из '{input_docx_path}'...")
-    try:
-        parser = MetadataParser(input_docx_path)
-        extracted_data: Dict[str, Any] = parser.parse()
-    except Exception as e:
-        print(f"[ОШИБКА] Критический сбой при парсинге метаданных: {e}", file=sys.stderr)
-        return
-
-    # Сохраняем промежуточный JSON с данными (согласно ТЗ и для удобства отладки)
-    with open(extracted_json_path, "w", encoding="utf-8") as f:
-        json.dump(extracted_data, f, indent=2, ensure_ascii=False)
-    print(f"      -> Метаданные сохранены: {extracted_json_path}")
-
-    # --- 4. Этап 2: Приведение к шаблону (MaterialFormatter) ---
-    print(f"[2/3] Подстановка данных в шаблон '{template_path}'...")
-    formatter = MaterialFormatter(
-        template_path=template_path,
-        original_docx_path=input_docx_path  # Передаём статью, чтобы перенести из неё таблицы и рисунки
+    metadata = extract_metadata(
+        str(input_path),
+        submission_id="manual-test",
+        storage_dir=str(output_dir),
+    )
+    metadata_path.write_text(
+        json.dumps(metadata, ensure_ascii=False, indent=2),
+        encoding="utf-8",
     )
 
-    report = formatter.format_material(
-        metadata=extracted_data,
-        output_docx_path=formatted_docx_path,
-        output_report_path=report_json_path
+    report = format_to_template(
+        metadata,
+        str(template_path),
+        str(formatted_path),
+        output_report_path=str(report_path),
+        original_docx_path=str(input_path),
     )
 
-    # --- 5. Этап 3: Вывод итоговой статистики ---
-    print("[3/3] Обработка завершена!\n")
-    print("--- Итоговый отчёт ---")
-    print(f"Статус:          {report.get('status').upper()}")
-    print(f"Заполнено полей: {len(report.get('filled_fields', []))} ({', '.join(report.get('filled_fields', []))})")
-
-    missing = report.get("missing_fields", [])
-    if missing:
-        print(f"Пропущено полей: {len(missing)} ({', '.join(missing)})")
-    else:
-        print("Пропущено полей: 0 (Все 8 машинных полей успешно заполнены!)")
-
-    warnings = report.get("warnings", [])
-    if warnings:
-        print("\nПредупреждения:")
-        for w in warnings:
-            print(f"  * {w}")
-
-    print("----------------------")
-    if report.get("status") in ["success", "partial"]:
-        print(f"Готовый документ: {formatted_docx_path}")
-        print(f"JSON-отчёт:       {report_json_path}")
-    else:
-        print(" Не удалось сформировать файл. Проверь предупреждения выше.")
+    print(f"Status: {report.get('status', 'failed')}")
+    print(f"Metadata: {metadata_path}")
+    print(f"Report: {report_path}")
+    if formatted_path.exists():
+        print(f"Formatted DOCX: {formatted_path}")
+        return 0
+    return 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
