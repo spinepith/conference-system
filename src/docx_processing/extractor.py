@@ -29,8 +29,9 @@ class DocxExtractor:
     с сохранением физического порядка и изоляцией математических объектов.
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, image_storage_dir: Optional[str] = None):
         self.file_path = file_path
+        self.image_storage_dir = image_storage_dir
         self.doc: docx.Document | None = None
         self.warnings: List[str] = []
         self.equation_counter = 0
@@ -142,7 +143,10 @@ class DocxExtractor:
 
             self.image_counter += 1
             file_name = f"{submission_id}_image_{self.image_counter}.{ext}"
-            storage_dir = f"storage/submissions/{submission_id}/images"
+            storage_dir = (
+                self.image_storage_dir
+                or os.path.join("storage", "submissions", submission_id, "images")
+            )
             os.makedirs(storage_dir, exist_ok=True)
             file_path = os.path.join(storage_dir, file_name)
 

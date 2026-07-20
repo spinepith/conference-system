@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import FileResponse, Http404, HttpRequest, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
@@ -12,7 +13,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import SubmissionForm
 from .models import SubmissionFile
-from .services import SubmissionService
+from .services import SubmissionService, resolve_stored_file_path
 from .workflow import WorkflowEngine
 
 
@@ -59,6 +60,22 @@ def status_page(request: HttpRequest, submission_id: str):
 
 
 @require_POST
+def run_workflow_page(request: HttpRequest, submission_id: str):
+    try:
+        results = WorkflowEngine().run(submission_id)
+        failed = [item for item in results if item.get("status") == "failed"]
+        if failed:
+            messages.error(request, "Обработка завершилась с ошибками. Проверьте результаты workflow.")
+        else:
+            messages.success(request, "DOCX обработан: структура извлечена, материал приведён к шаблону.")
+    except ObjectDoesNotExist as exc:
+        raise Http404("Заявка не найдена") from exc
+    except Exception as exc:
+        messages.error(request, f"Не удалось запустить обработку: {exc}")
+    return redirect("status", submission_id=submission_id)
+
+
+@require_POST
 def confirm_submission(request: HttpRequest, submission_id: str):
     svc = service()
     try:
@@ -92,7 +109,7 @@ def download_file(request: HttpRequest, file_id: int):
         file_row = SubmissionFile.objects.get(pk=file_id)
     except SubmissionFile.DoesNotExist as exc:
         raise Http404("Файл не найден") from exc
-    path = Path(settings.BASE_DIR) / file_row.path
+    path = resolve_stored_file_path(file_row.path)
     if not path.exists():
         raise Http404("Файл отсутствует в хранилище")
     return FileResponse(path.open("rb"), as_attachment=True, filename=path.name)

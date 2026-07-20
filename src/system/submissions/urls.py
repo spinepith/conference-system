@@ -6,6 +6,7 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("submit/", views.submit_material, name="submit"),
     path("status/<str:submission_id>/", views.status_page, name="status"),
+    path("status/<str:submission_id>/workflow/", views.run_workflow_page, name="run_workflow_page"),
     path("status/<str:submission_id>/confirm/", views.confirm_submission, name="confirm_submission"),
     path("status/<str:submission_id>/revision/", views.upload_revision, name="upload_revision"),
     path("download/<int:file_id>/", views.download_file, name="download_file"),

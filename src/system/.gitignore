@@ -1,13 +1,10 @@
 venv/
 .venv/
 __pycache__/
-*.pyc
+*.py[cod]
 .env
 .env.*
 !/.env.example
-storage/
-*.sqlite3
-*.db
 .pytest_cache/
 .idea/
 .vscode/

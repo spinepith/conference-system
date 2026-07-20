@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from django.conf import settings
-from django.db import transaction
 from django.core.files.uploadedfile import UploadedFile
+from django.db import transaction
 from django.utils import timezone
 
 from .models import (
@@ -19,8 +19,8 @@ from .models import (
     Organization,
     StatusHistory,
     Submission,
-    SubmissionFile,
     SubmissionAuthor,
+    SubmissionFile,
 )
 from .status_machine import assert_transition
 
@@ -50,6 +50,33 @@ def load_seed_organizations() -> list[str]:
             seen.add(key)
             result.append(name)
     return result
+
+
+def project_path_reference(path: str | Path) -> str:
+    """Store project files portably relative to the repository root when possible."""
+    resolved = Path(path).resolve()
+    project_root = Path(settings.PROJECT_ROOT).resolve()
+    try:
+        return str(resolved.relative_to(project_root)).replace("\\", "/")
+    except ValueError:
+        return str(resolved).replace("\\", "/")
+
+
+def resolve_stored_file_path(value: str | Path) -> Path:
+    """Resolve new project-relative and legacy core-relative file references."""
+    path = Path(value)
+    if path.is_absolute():
+        return path
+
+    project_candidate = Path(settings.PROJECT_ROOT) / path
+    if project_candidate.exists():
+        return project_candidate
+
+    # Backward compatibility with records created before storage moved above src.
+    legacy_candidate = Path(settings.BASE_DIR) / path
+    if legacy_candidate.exists():
+        return legacy_candidate
+    return project_candidate
 
 
 class SubmissionService:
@@ -153,12 +180,11 @@ class SubmissionService:
                 organization=contact_org,
                 email=author_contact.get("email", ""),
             )
-            SubmissionAuthor.objects.create(
-                submission=submission,
-                author=contact_author,
-                order=1,
-            )
+            SubmissionAuthor.objects.create(submission=submission, author=contact_author, order=1)
+
         for item in metadata.get("authors", []):
+            if not isinstance(item, dict):
+                continue
             name = item.get("full_name") or ""
             if name and name != contact_name:
                 author_org = self.ensure_organization(
@@ -176,7 +202,6 @@ class SubmissionService:
                     author=author,
                     order=SubmissionAuthor.objects.filter(submission=submission).count() + 1,
                 )
-                self.ensure_organization(item.get("organization", ""), source="user", created_by_submission=submission)
 
         StatusHistory.objects.create(
             submission=submission,
@@ -246,6 +271,8 @@ class SubmissionService:
         submission = Submission.objects.select_for_update().get(pk=submission_id)
         from_status = submission.status
         assert_transition(from_status, status)
+        if from_status == status:
+            return self.get_submission(submission_id)
         submission.status = status
         submission.save(update_fields=["status", "updated_at"])
         StatusHistory.objects.create(
@@ -259,6 +286,67 @@ class SubmissionService:
             submission=submission,
             event_type="status_changed",
             payload={"from_status": from_status, "to_status": status, "comment": comment},
+        )
+        return self.get_submission(submission_id)
+
+    @transaction.atomic
+    def merge_extracted_metadata(self, submission_id: str, extracted: dict[str, Any]) -> dict[str, Any]:
+        """Сохраняет полный результат DOCX-извлечения и дополняет канонические поля заявки.
+
+        Поля, которые автор уже заполнил в форме, не перезаписываются пустыми или
+        менее надёжными значениями парсера. Полный исходный результат всегда
+        доступен в metadata["extracted_metadata"].
+        """
+        submission = Submission.objects.select_for_update().get(pk=submission_id)
+        current = dict(submission.metadata or {})
+        current["extracted_metadata"] = extracted
+
+        mapping = {
+            "title": "title_ru",
+            "title_en": "title_en",
+            "abstract": "abstract_ru",
+            "abstract_en": "abstract_en",
+            "keywords": "keywords_ru",
+            "keywords_en": "keywords_en",
+            "supervisor": "supervisor",
+            "body_text": "body_text",
+            "sections": "sections",
+            "references": "references",
+            "objects": "objects",
+            "warnings": "extraction_warnings",
+        }
+        for source_key, target_key in mapping.items():
+            value = extracted.get(source_key)
+            if target_key in {"body_text", "sections", "references", "objects", "extraction_warnings"}:
+                current[target_key] = value if value is not None else current.get(target_key)
+            elif not current.get(target_key) and value:
+                current[target_key] = value
+
+        extracted_authors = extracted.get("authors") or []
+        current["extracted_authors"] = extracted_authors
+        if not current.get("authors") and extracted_authors:
+            organization = extracted.get("organization") or submission.author_contact.get("organization", "")
+            current["authors"] = [
+                {"full_name": name, "organization": organization, "email": ""}
+                for name in extracted_authors
+                if isinstance(name, str) and name.strip()
+            ]
+
+        if not submission.author_contact.get("organization") and extracted.get("organization"):
+            author_contact = dict(submission.author_contact or {})
+            author_contact["organization"] = extracted["organization"]
+            submission.author_contact = author_contact
+
+        submission.metadata = current
+        submission.save(update_fields=["metadata", "author_contact", "updated_at"])
+        EventLog.objects.create(
+            submission=submission,
+            event_type="metadata_extracted",
+            payload={
+                "title": extracted.get("title", ""),
+                "authors_count": len(extracted_authors),
+                "warnings_count": len(extracted.get("warnings") or []),
+            },
         )
         return self.get_submission(submission_id)
 
@@ -283,27 +371,51 @@ class SubmissionService:
         EventLog.objects.create(submission=submission, event_type=event_type, payload=payload or {})
 
     def save_uploaded_file(self, submission: Submission, file_type: str, uploaded_file: UploadedFile) -> SubmissionFile:
-        destination_dir = Path(settings.MEDIA_ROOT) / "submissions" / submission.submission_id
+        destination_dir = Path(settings.SUBMISSIONS_STORAGE_DIR) / submission.submission_id
         destination_dir.mkdir(parents=True, exist_ok=True)
-        safe_name = uploaded_file.name or "uploaded.docx"
+        safe_name = Path(uploaded_file.name or "uploaded.docx").name
         if file_type == "original_docx":
             safe_name = "original.docx"
         elif file_type == "revision_docx":
-            safe_name = f"revision_{timezone.now().strftime('%Y%m%d_%H%M%S')}.docx"
+            safe_name = f"revision_{timezone.now().strftime('%Y%m%d_%H%M%S_%f')}.docx"
         path = destination_dir / safe_name
         with path.open("wb") as fh:
             for chunk in uploaded_file.chunks():
                 fh.write(chunk)
-        relative_path = str(path.relative_to(Path(settings.BASE_DIR))).replace("\\", "/")
+        relative_path = project_path_reference(path)
         file_row = SubmissionFile.objects.create(submission=submission, file_type=file_type, path=relative_path)
-        EventLog.objects.create(submission=submission, event_type="file_saved", payload={"file_type": file_type, "path": relative_path})
+        EventLog.objects.create(
+            submission=submission,
+            event_type="file_saved",
+            payload={"file_type": file_type, "path": relative_path},
+        )
         return file_row
 
-    def save_file_path(self, submission_id: str, file_type: str, path: str) -> dict[str, Any]:
-        submission = Submission.objects.get(pk=submission_id)
-        file_row = SubmissionFile.objects.create(submission=submission, file_type=file_type, path=path)
-        EventLog.objects.create(submission=submission, event_type="file_path_saved", payload={"file_type": file_type, "path": path})
+    @transaction.atomic
+    def save_or_update_file_path(self, submission_id: str, file_type: str, path: str) -> dict[str, Any]:
+        """Сохраняет путь результата обработки, заменяя старую запись того же типа."""
+        submission = Submission.objects.select_for_update().get(pk=submission_id)
+        normalized_path = project_path_reference(path) if Path(path).is_absolute() else str(path).replace("\\", "/")
+        file_row = SubmissionFile.objects.filter(submission=submission, file_type=file_type).order_by("-uploaded_at", "-id").first()
+        if file_row:
+            file_row.path = normalized_path
+            file_row.save(update_fields=["path"])
+            SubmissionFile.objects.filter(submission=submission, file_type=file_type).exclude(pk=file_row.pk).delete()
+        else:
+            file_row = SubmissionFile.objects.create(submission=submission, file_type=file_type, path=normalized_path)
+        EventLog.objects.create(
+            submission=submission,
+            event_type="file_path_saved",
+            payload={"file_type": file_type, "path": normalized_path},
+        )
         return {"id": file_row.id, "file_type": file_row.file_type, "path": file_row.path}
+
+    def save_file_path(self, submission_id: str, file_type: str, path: str) -> dict[str, Any]:
+        return self.save_or_update_file_path(submission_id, file_type, path)
+
+    def get_latest_file_path(self, submission_id: str, file_type: str) -> str:
+        row = SubmissionFile.objects.filter(submission_id=submission_id, file_type=file_type).order_by("-uploaded_at", "-id").first()
+        return row.path if row else ""
 
     def save_editor_decision(self, submission_id: str, decision: str, editor_name: str = "editor", comment: str = "") -> dict[str, Any]:
         submission = Submission.objects.get(pk=submission_id)
@@ -315,6 +427,18 @@ class SubmissionService:
         )
         return {"id": row.id, "decision": row.decision, "editor_name": row.editor_name, "comment": row.comment}
 
+    @staticmethod
+    def _latest_files(submission: Submission) -> dict[str, str]:
+        result: dict[str, str] = {}
+        rows = sorted(
+            submission.files.all(),
+            key=lambda row: (row.uploaded_at, row.id),
+            reverse=True,
+        )
+        for row in rows:
+            result.setdefault(row.file_type, row.path)
+        return result
+
     def to_dict(self, submission: Submission, compact: bool = False) -> dict[str, Any]:
         data = {
             "submission_id": submission.submission_id,
@@ -325,7 +449,7 @@ class SubmissionService:
             "updated_at": submission.updated_at.isoformat(),
             "author_contact": submission.author_contact,
             "metadata": submission.metadata,
-            "files": {row.file_type: row.path for row in submission.files.all()},
+            "files": self._latest_files(submission),
             "checks": [
                 {
                     "check_id": row.check_id,
@@ -347,7 +471,11 @@ class SubmissionService:
         data.update(
             {
                 "authors": [
-                    {"full_name": row.full_name, "organization": row.organization.name if row.organization else "", "email": row.email}
+                    {
+                        "full_name": row.full_name,
+                        "organization": row.organization.name if row.organization else "",
+                        "email": row.email,
+                    }
                     for row in submission.authors.all()
                 ],
                 "status_history": [
@@ -388,8 +516,8 @@ class SubmissionService:
 
 
 def save_json_file(submission_id: str, filename: str, payload: dict[str, Any]) -> str:
-    destination_dir = Path(settings.MEDIA_ROOT) / "submissions" / submission_id
+    destination_dir = Path(settings.SUBMISSIONS_STORAGE_DIR) / submission_id
     destination_dir.mkdir(parents=True, exist_ok=True)
     path = destination_dir / filename
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return str(path.relative_to(Path(settings.BASE_DIR))).replace("\\", "/")
+    return project_path_reference(path)

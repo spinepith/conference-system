@@ -58,12 +58,20 @@ __all__ = [
 ]
 
 
-def extract_metadata(original_docx_path: str, submission_id: str = "temp_sub") -> Dict[str, Any]:
+def extract_metadata(
+        original_docx_path: str,
+        submission_id: str = "temp_sub",
+        storage_dir: Optional[str] = None,
+) -> Dict[str, Any]:
     """Workflow-этап "extract_metadata" (ТЗ п.10). Контракт результата — ТЗ п.20.3.
 
     См. подробное описание полей в docx_processing/metadata_parser.py.
     """
-    return _extract_metadata(original_docx_path, submission_id=submission_id)
+    return _extract_metadata(
+        original_docx_path,
+        submission_id=submission_id,
+        storage_dir=storage_dir,
+    )
 
 
 def save_extracted_metadata(metadata: Dict[str, Any], output_path: str) -> bool:
@@ -153,7 +161,11 @@ def process_submission(
     formatted_docx_path = os.path.join(sub_dir, "formatted_material.docx")
     report_path = os.path.join(sub_dir, "formatting_report.json")
 
-    metadata = extract_metadata(original_docx_path, submission_id=submission_id)
+    metadata = extract_metadata(
+        original_docx_path,
+        submission_id=submission_id,
+        storage_dir=storage_dir,
+    )
     save_extracted_metadata(metadata, metadata_path)
 
     report = format_to_template(

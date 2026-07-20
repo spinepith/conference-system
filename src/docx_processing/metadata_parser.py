@@ -58,8 +58,9 @@ Submission (объекты автора) — задача сервиса зая�
 записи заявки в базу; при необходимости можно склеить authors (список
 ФИО) с organization (общая на всех авторов строка) на стороне ядра.
 """
+import os
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from docx_processing.extractor import DocxExtractor
 
 # Обязательные по контракту 20.3 поля верхнего уровня и их "пустые" значения.
@@ -96,10 +97,20 @@ class MetadataParser:
         "org_keywords": r"университет|институт|академия|россия|беларусь|кафедра|факультет|г\.",
     }
 
-    def __init__(self, file_path: str, submission_id: str = "temp_sub"):
+    def __init__(
+        self,
+        file_path: str,
+        submission_id: str = "temp_sub",
+        storage_dir: Optional[str] = None,
+    ):
         self.file_path = file_path
         self.submission_id = submission_id
-        self.extractor = DocxExtractor(file_path)
+        image_storage_dir = (
+            os.path.join(storage_dir, submission_id, "images")
+            if storage_dir
+            else None
+        )
+        self.extractor = DocxExtractor(file_path, image_storage_dir=image_storage_dir)
         self.raw_data = self.extractor.extract_raw_data(submission_id=self.submission_id)
         self.warnings: List[str] = self.raw_data.get("warnings", [])
 
@@ -249,7 +260,11 @@ class MetadataParser:
         return result
 
 
-def extract_metadata(file_path: str, submission_id: str = "temp_sub") -> Dict[str, Any]:
+def extract_metadata(
+    file_path: str,
+    submission_id: str = "temp_sub",
+    storage_dir: Optional[str] = None,
+) -> Dict[str, Any]:
     """
     ЕДИНСТВЕННАЯ рекомендуемая точка входа модуля для остальных
     разработчиков проекта (workflow-этап "extract_metadata", ТЗ п.10).
@@ -270,7 +285,11 @@ def extract_metadata(file_path: str, submission_id: str = "temp_sub") -> Dict[st
     пустыми полями и описанием проблемы в metadata["warnings"].
     """
     try:
-        parser = MetadataParser(file_path, submission_id=submission_id)
+        parser = MetadataParser(
+            file_path,
+            submission_id=submission_id,
+            storage_dir=storage_dir,
+        )
         metadata = parser.parse()
     except Exception as e:
         metadata = {k: (v.copy() if isinstance(v, (list, dict)) else v) for k, v in _CONTRACT_DEFAULTS.items()}

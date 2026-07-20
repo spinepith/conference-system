@@ -10,6 +10,8 @@ class PluginRegistry:
     def register(self, stage: BaseWorkflowStage) -> None:
         if not stage.stage_id:
             raise ValueError("Workflow stage must have stage_id")
+        if stage.stage_id in self._stages:
+            raise ValueError(f"Workflow stage already registered: {stage.stage_id}")
         self._stages[stage.stage_id] = stage
 
     def get(self, stage_id: str) -> BaseWorkflowStage:

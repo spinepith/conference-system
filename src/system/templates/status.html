@@ -29,6 +29,35 @@
 </section>
 
 <section class="card">
+  <div class="section-title">
+    <div>
+      <h2>Автоматическая DOCX-обработка</h2>
+      <p class="muted">Запускает реальные этапы <code>extract_metadata</code> и <code>format_to_template</code>.</p>
+    </div>
+    <form method="post" action="{% url 'run_workflow_page' submission.submission_id %}">
+      {% csrf_token %}
+      <button class="button" type="submit">Запустить обработку</button>
+    </form>
+  </div>
+  {% if submission.metadata.extracted_metadata %}
+    <div class="grid two">
+      <div>
+        <h3>Найденные данные</h3>
+        <p><b>Название:</b> {{ submission.metadata.extracted_metadata.title|default:'—' }}</p>
+        <p><b>Организация:</b> {{ submission.metadata.extracted_metadata.organization|default:'—' }}</p>
+        <p><b>Авторы:</b> {{ submission.metadata.extracted_metadata.authors|join:', '|default:'—' }}</p>
+      </div>
+      <div>
+        <h3>Структура</h3>
+        <p><b>Разделов:</b> {{ submission.metadata.extracted_metadata.sections|length }}</p>
+        <p><b>Таблиц:</b> {{ submission.metadata.extracted_metadata.objects.tables_count|default:0 }}</p>
+        <p><b>Рисунков:</b> {{ submission.metadata.extracted_metadata.objects.figures_count|default:0 }}</p>
+      </div>
+    </div>
+  {% endif %}
+</section>
+
+<section class="card">
   <h2>Файлы</h2>
   {% if submission.files.all %}
     <ul class="files-list">
