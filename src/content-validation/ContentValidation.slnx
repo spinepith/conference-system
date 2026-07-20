@@ -6,6 +6,7 @@
   <Folder Name="/Элементы решения/bin/" />
   <Folder Name="/Элементы решения/storage/" />
   <Folder Name="/Элементы решения/Tests/" />
+  <Project Path="ContentValidation.Api/ContentValidation.Api.csproj" />
   <Project Path="ContentValidation.Cli/ContentValidation.Cli.csproj" />
   <Project Path="ContentValidation.TestConsole/ContentValidation.TestConsole.csproj" />
   <Project Path="ContentValidation/ContentValidation.csproj" />

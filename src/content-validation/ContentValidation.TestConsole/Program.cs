@@ -19,7 +19,7 @@ public class Program {
         var apiKey = Environment.GetEnvironmentVariable("TOKEN")!;
         var useJsonInput = false;
 
-        var llmClient = new LlmClient(apiKey, "gemini-3.1-flash-lite");
+        var llmClient = new LlmClient(apiKey, Environment.GetEnvironmentVariable("LLM_MODEL") ?? "gemini-3.1-flash-lite");
         var validator = new ContentValidation(llmClient, Path.Combine(Environment.GetEnvironmentVariable("PATH_STORAGE")!));
         #endregion
 

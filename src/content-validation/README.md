@@ -102,7 +102,7 @@ dotnet ContentValidation.Cli.dll <submission_id> [опции]
 - `--api-key <ключ>` - API ключ (по умолчанию из TOKEN)
 - `--storage <путь>` - Путь к storage (по умолчанию из PATH_STORAGE)
 - `--prompts <путь>` - Путь к промптам (по умолчанию: Prompts)
-- `--model <модель>` - Модель Gemini (по умолчанию: gemini-1.5-flash)
+- `--model <модель>` - Модель Gemini (по умолчанию: gemini-3.1-flash-lite)
 
 ### Примеры:
 ```bash

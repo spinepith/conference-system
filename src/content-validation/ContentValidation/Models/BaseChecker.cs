@@ -43,7 +43,7 @@ internal abstract class BaseChecker {
                 result = llmResult;
 
             result.RawModelResponse = new CheckResult.RawModelResponseData {
-                Model     = "gemini-3.5-flash",
+                Model     = Environment.GetEnvironmentVariable("LLM_MODEL") ?? "gemini-3.1-flash-lite",
                 Timestamp = DateTime.UtcNow.ToString("o"),
                 Response  = response
             };

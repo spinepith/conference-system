@@ -35,7 +35,7 @@ var promptsOption = new Option<string>(
 var modelOption = new Option<string>(
     name: "--model",
     description: "Модель Gemini",
-    getDefaultValue: () => "gemini-3.1-flash-lite"
+    getDefaultValue: () => Environment.GetEnvironmentVariable("LLM_MODEL") ?? "gemini-3.1-flash-lite"
 );
 
 rootCommand.AddArgument(submissionIdArg);
@@ -77,7 +77,6 @@ rootCommand.SetHandler(async (submissionId, apiKey, storage, prompts, model) => 
         if (!Path.IsPathRooted(prompts)) {
             var exeDir = AppContext.BaseDirectory;
             absolutePromptsPath = Path.Combine(exeDir, prompts);
-            Console.WriteLine(absolutePromptsPath);
         }
 
         if (!Directory.Exists(absolutePromptsPath)) {

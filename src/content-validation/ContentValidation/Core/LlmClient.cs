@@ -7,7 +7,7 @@ namespace ContentValidation.Core;
 public class LlmClient {
     private readonly GenerativeModel _model;
 
-    public LlmClient(string apiKey, string model = "gemini-3.5-flash") {
+    public LlmClient(string apiKey, string model) {
         var config = new GenerationConfig {
             Temperature      = 0.2f,
             MaxOutputTokens  = 2048,
