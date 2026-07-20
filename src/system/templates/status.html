@@ -31,13 +31,16 @@
 <section class="card">
   <div class="section-title">
     <div>
-      <h2>Автоматическая DOCX-обработка</h2>
-      <p class="muted">Запускает реальные этапы <code>extract_metadata</code> и <code>format_to_template</code>.</p>
+      <h2>Автоматическая обработка материала</h2>
+      <p class="muted">Запускает <code>extract_metadata</code>, <code>format_to_template</code> и <code>export_pdf_and_package</code>.</p>
     </div>
-    <form method="post" action="{% url 'run_workflow_page' submission.submission_id %}">
-      {% csrf_token %}
-      <button class="button" type="submit">Запустить обработку</button>
-    </form>
+    <div>
+      <form method="post" action="{% url 'run_workflow_page' submission.submission_id %}">
+        {% csrf_token %}
+        <button class="button" type="submit">Запустить обработку</button>
+      </form>
+      <a class="button secondary" href="{% url 'editorial:editor_card' submission.submission_id %}">Редакторская карточка</a>
+    </div>
   </div>
   {% if submission.metadata.extracted_metadata %}
     <div class="grid two">

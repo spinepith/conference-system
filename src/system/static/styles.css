@@ -47,3 +47,12 @@ code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; }
 .message { padding: 12px 14px; border-radius: 10px; margin-bottom: 10px; background: #e0f2fe; color: #075985; }
 .message.success { background: #dcfce7; color: #166534; }
 .message.error { background: #fee2e2; color: #991b1b; }
+
+select { display:block; width:100%; margin-top:7px; padding:11px; border:1px solid #d1d5db; border-radius:9px; font:inherit; background:white; }
+.filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:end; }
+.filters label { font-weight:700; }
+.muted-button { background:#6b7280; }
+.button.danger { background:#b91c1c; }
+.decision-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.table-scroll { overflow-x:auto; }
+@media (max-width:760px) { .filters, .decision-grid { grid-template-columns:1fr; } }

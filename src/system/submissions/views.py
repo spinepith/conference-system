@@ -67,7 +67,7 @@ def run_workflow_page(request: HttpRequest, submission_id: str):
         if failed:
             messages.error(request, "Обработка завершилась с ошибками. Проверьте результаты workflow.")
         else:
-            messages.success(request, "DOCX обработан: структура извлечена, материал приведён к шаблону.")
+            messages.success(request, "Материал обработан: структура извлечена, DOCX оформлен, PDF и ZIP сформированы.")
     except ObjectDoesNotExist as exc:
         raise Http404("Заявка не найдена") from exc
     except Exception as exc:

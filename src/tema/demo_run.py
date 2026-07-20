@@ -1,22 +1,23 @@
-"""Разовый прогон модуля для визуальной проверки результата."""
-import shutil
+"""Manual PDF/ZIP demonstration for an existing submission directory."""
+from __future__ import annotations
+
+import argparse
+import sys
 from pathlib import Path
 
-from result_export.service import finalize_submission_files
+SRC_ROOT = Path(__file__).resolve().parents[1]
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
 
-# Готовим тестовую "заявку" в отдельной папке рядом с проектом
-submission_dir = Path("demo_output/SUB-DEMO-0001")
-submission_dir.mkdir(parents=True, exist_ok=True)
+from tema.result_export.service import finalize_submission_files  # noqa: E402
 
-# Копируем тестовый DOCX как formatted_material.docx
-shutil.copy(
-    "samples/input_materials/sample_formatted_material.docx",
-    submission_dir / "formatted_material.docx",
-)
 
-# Запускаем весь модуль: PDF-экспорт + реестр + ZIP
-report = finalize_submission_files(submission_dir)
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("submission_dir", help="Folder containing formatted_material.docx")
+    args = parser.parse_args()
+    print(finalize_submission_files(Path(args.submission_dir)))
 
-print("Статус:", report["status"])
-print("Ошибка:", report.get("error"))
-print("Файлы теперь лежат в:", submission_dir.resolve())
+
+if __name__ == "__main__":
+    main()

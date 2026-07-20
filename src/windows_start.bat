@@ -44,6 +44,12 @@ if not exist "%PROJECT_ROOT%\src\docx_processing\__init__.py" (
     goto :fail
 )
 
+if not exist "%PROJECT_ROOT%\src\tema\__init__.py" (
+    echo [ERROR] Student 3 module was not found:
+    echo %PROJECT_ROOT%\src\tema
+    goto :fail
+)
+
 if not exist "%PYTHON_EXE%" (
     echo [2/6] Creating virtual environment...
 

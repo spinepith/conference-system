@@ -1,14 +1,4 @@
-"""
-result_export/package_builder.py
-
-Реализует пункт 22.2 ТЗ: «формировать ZIP-пакет результата».
-
-Собирает все фактически существующие файлы заявки (см. file_registry.py)
-в единый ZIP-архив, который редактор или автор может скачать одним файлом.
-Если часть файлов отсутствует, пакет всё равно собирается из того, что
-есть (status="partial"), а не падает с ошибкой — это соответствует общему
-принципу ТЗ «не ломать всю систему при ошибке» (п. 10).
-"""
+"""Build a ZIP package from available result files."""
 
 from __future__ import annotations
 
@@ -18,34 +8,12 @@ from pathlib import Path
 from .file_registry import collect_result_files
 
 
-def build_result_zip(
-    submission_dir: str | Path,
-    output_zip_path: str | Path,
-) -> dict:
-    """
-    Строит ZIP-архив из доступных файлов заявки.
-
-    Возвращает словарь:
-        {
-          "status": "success" | "partial" | "failed",
-          "error": str | None,
-          "zip_path": str | None,
-          "included_files": [...],
-          "missing_files": [...],
-        }
-
-    status:
-        "success" — заархивированы все ожидаемые файлы;
-        "partial" — заархивирована часть файлов, каких-то не хватает;
-        "failed"  — не удалось создать архив вообще
-                    (нет ни одного файла или ошибка записи на диск).
-    """
-    submission_dir = Path(submission_dir)
-    output_zip_path = Path(output_zip_path)
+def build_result_zip(submission_dir: str | Path, output_zip_path: str | Path) -> dict:
+    submission_dir = Path(submission_dir).resolve()
+    output_zip_path = Path(output_zip_path).resolve()
     manifest = collect_result_files(submission_dir)
-
-    available_files = [info for info in manifest["files"].values() if info["available"]]
-    if not available_files:
+    available = [info for info in manifest["files"].values() if info["available"]]
+    if not available:
         return {
             "status": "failed",
             "error": "В папке заявки не найдено ни одного файла результата — архивировать нечего.",
@@ -56,12 +24,19 @@ def build_result_zip(
 
     try:
         output_zip_path.parent.mkdir(parents=True, exist_ok=True)
-        included_files = []
-        with zipfile.ZipFile(output_zip_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-            for info in available_files:
-                zf.write(info["path"], arcname=info["filename"])
-                included_files.append(info["filename"])
-    except OSError as exc:
+        output_zip_path.unlink(missing_ok=True)
+        included: list[str] = []
+        with zipfile.ZipFile(output_zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
+            for info in available:
+                path = submission_dir / info["path"]
+                archive.write(path, arcname=info["filename"])
+                included.append(info["filename"])
+            manifest_path = submission_dir / "result_manifest.json"
+            if manifest_path.is_file():
+                archive.write(manifest_path, arcname=manifest_path.name)
+                included.append(manifest_path.name)
+    except (OSError, zipfile.BadZipFile) as exc:
+        output_zip_path.unlink(missing_ok=True)
         return {
             "status": "failed",
             "error": f"Ошибка при создании ZIP-архива: {exc}",
@@ -75,6 +50,8 @@ def build_result_zip(
         "status": status,
         "error": None,
         "zip_path": str(output_zip_path),
-        "included_files": included_files,
+        "included_files": included,
         "missing_files": manifest["missing_files"],
+        "missing_required_files": manifest["missing_required_files"],
+        "missing_optional_files": manifest["missing_optional_files"],
     }

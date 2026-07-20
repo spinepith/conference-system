@@ -118,7 +118,10 @@ class ConferenceSystemTests(TestCase):
 
         results = WorkflowEngine().run(submission_id)
 
-        self.assertEqual([row["stage_id"] for row in results], ["extract_metadata", "format_to_template"])
+        self.assertEqual(
+            [row["stage_id"] for row in results],
+            ["extract_metadata", "format_to_template", "export_pdf_and_package"],
+        )
         self.assertNotIn("failed", [row["status"] for row in results])
 
         model = Submission.objects.get(pk=submission_id)
@@ -133,10 +136,16 @@ class ConferenceSystemTests(TestCase):
         self.assertIn("extracted_metadata", files)
         self.assertIn("formatted_docx", files)
         self.assertIn("formatting_report", files)
+        self.assertIn("formatted_pdf", files)
+        self.assertIn("result_manifest", files)
+        self.assertIn("result_package", files)
         self.assertTrue(Path(files["extracted_metadata"]).exists())
         self.assertTrue(Path(files["formatted_docx"]).exists())
-        self.assertTrue(Path(files["formatting_report"]).exists())
-        self.assertEqual(WorkflowStageResult.objects.filter(submission_id=submission_id).count(), 2)
+        self.assertTrue(resolve_stored_file_path(files["formatting_report"]).exists())
+        self.assertTrue(resolve_stored_file_path(files["formatted_pdf"]).exists())
+        self.assertTrue(resolve_stored_file_path(files["result_manifest"]).exists())
+        self.assertTrue(resolve_stored_file_path(files["result_package"]).exists())
+        self.assertEqual(WorkflowStageResult.objects.filter(submission_id=submission_id).count(), 3)
 
     def test_second_stage_receives_file_created_by_first_stage(self):
         submission = self.create_submission()
@@ -170,4 +179,5 @@ class ConferenceSystemTests(TestCase):
 
         self.assertEqual(results[0]["status"], "failed")
         self.assertEqual(results[1]["status"], "skipped")
+        self.assertEqual(results[2]["status"], "skipped")
         self.assertEqual(model.status, "error")

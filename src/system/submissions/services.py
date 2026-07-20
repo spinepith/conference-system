@@ -449,6 +449,14 @@ class SubmissionService:
             "updated_at": submission.updated_at.isoformat(),
             "author_contact": submission.author_contact,
             "metadata": submission.metadata,
+            "authors": [
+                {
+                    "full_name": row.full_name,
+                    "organization": row.organization.name if row.organization else "",
+                    "email": row.email,
+                }
+                for row in submission.authors.all()
+            ],
             "files": self._latest_files(submission),
             "checks": [
                 {
@@ -470,14 +478,6 @@ class SubmissionService:
             return data
         data.update(
             {
-                "authors": [
-                    {
-                        "full_name": row.full_name,
-                        "organization": row.organization.name if row.organization else "",
-                        "email": row.email,
-                    }
-                    for row in submission.authors.all()
-                ],
                 "status_history": [
                     {
                         "from_status": row.from_status,

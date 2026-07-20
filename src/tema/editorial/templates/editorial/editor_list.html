@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Редакторская панель{% endblock %}
+{% block content %}
+<section class="hero"><h1>Редакторская панель</h1><p>Заявки, автоматические проверки, файлы и решения редактора.</p></section>
+<section class="card">
+<form class="filters" method="get">
+<label>Выпуск<select name="issue_id"><option value="">Все выпуски</option>{% for issue in issues %}<option value="{{ issue.issue_id }}" {% if filter_issue_id == issue.issue_id %}selected{% endif %}>{{ issue.title }} ({{ issue.year }} Q{{ issue.quarter }})</option>{% endfor %}</select></label>
+<label>Статус<select name="status"><option value="">Все статусы</option>{% for value in statuses %}<option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+<label>Автор или название<input name="q" value="{{ filter_q }}" placeholder="Введите строку поиска"></label>
+<div><button class="button" type="submit">Найти</button> <a class="button muted-button" href="{% url 'editorial:editor_list' %}">Сбросить</a></div>
+</form>
+</section>
+<section class="card">
+{% if submissions %}<div class="table-scroll"><table><thead><tr><th>Номер</th><th>Название</th><th>Автор</th><th>Выпуск</th><th>Статус</th><th>Риск</th><th>Обновлено</th></tr></thead><tbody>
+{% for item in submissions %}<tr><td><a href="{% url 'editorial:editor_card' item.submission_id %}"><code>{{ item.submission_id }}</code></a></td><td>{{ item.metadata.title_ru|default:'—' }}</td><td>{{ item.author_contact.full_name|default:'—' }}</td><td>{{ item.issue_id }}</td><td><span class="status">{{ item.status }}</span></td><td>{{ item.overall_risk|default:'нет проверок' }}</td><td>{{ item.updated_at }}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="empty">Заявок не найдено.</p>{% endif %}
+</section>
+{% endblock %}

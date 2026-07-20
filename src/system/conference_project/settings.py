@@ -6,21 +6,15 @@ from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 
-# conference-system/src/system
-BASE_DIR = Path(__file__).resolve().parent.parent
-# conference-system/src
-SRC_ROOT = BASE_DIR.parent
-# conference-system
-PROJECT_ROOT = SRC_ROOT.parent
+BASE_DIR = Path(__file__).resolve().parent.parent       # conference-system/src/system
+SRC_ROOT = BASE_DIR.parent                             # conference-system/src
+PROJECT_ROOT = SRC_ROOT.parent                         # conference-system
 ENV_FILE = PROJECT_ROOT / ".env"
 
-# Главный модуль загружает общий .env всего репозитория. Переменные,
-# уже заданные операционной системой/CI, имеют приоритет.
 load_dotenv(ENV_FILE, override=False)
 
 
 def _first_env(*names: str) -> str:
-    """Return the first non-empty environment value from the supplied names."""
     for name in names:
         value = os.getenv(name, "").strip()
         if value:
@@ -29,7 +23,6 @@ def _first_env(*names: str) -> str:
 
 
 def resolve_project_path(*variable_names: str, default: Path) -> Path:
-    """Resolve a configured path relative to the repository root."""
     raw_value = _first_env(*variable_names)
     path = Path(raw_value) if raw_value else Path(default)
     if not path.is_absolute():
@@ -37,60 +30,51 @@ def resolve_project_path(*variable_names: str, default: Path) -> Path:
     return path.resolve()
 
 
-# Модуль студента 2. Поддерживаем также старое имя переменной с опечаткой,
-# чтобы локальные .env участников команды не перестали работать внезапно.
+def configure_external_package(package_name: str, path: Path, env_name: str) -> None:
+    if not (path / "__init__.py").exists():
+        raise ImproperlyConfigured(
+            f"Не найден модуль {package_name}. Проверьте {env_name} в {ENV_FILE}. "
+            f"Текущий путь: {path}"
+        )
+    parent = str(path.parent)
+    if parent not in sys.path:
+        sys.path.insert(0, parent)
+
+
 DOCX_PROCESSING_ROOT = resolve_project_path(
     "PATH_MODULE_DOCX_PROCESSING",
     "PATH_MODULE_DOCX_PROCESSONG",
     "DOCX_PROCESSING_ROOT",
     default=SRC_ROOT / "docx_processing",
 )
-
-if not (DOCX_PROCESSING_ROOT / "__init__.py").exists():
-    raise ImproperlyConfigured(
-        "Не найден модуль docx_processing. Проверьте PATH_MODULE_DOCX_PROCESSING "
-        f"в {ENV_FILE}. Текущий путь: {DOCX_PROCESSING_ROOT}"
-    )
-
-# Для импорта `docx_processing.*` Python должен видеть родительскую папку модуля.
-docx_processing_parent = str(DOCX_PROCESSING_ROOT.parent)
-if docx_processing_parent not in sys.path:
-    sys.path.insert(0, docx_processing_parent)
-
-STORAGE_ROOT = resolve_project_path(
-    "PATH_STORAGE",
-    "STORAGE_ROOT",
-    default=PROJECT_ROOT / "storage",
+TEMA_ROOT = resolve_project_path(
+    "PATH_MODULE_TEMA",
+    "TEMA_ROOT",
+    default=SRC_ROOT / "tema",
 )
+configure_external_package("docx_processing", DOCX_PROCESSING_ROOT, "PATH_MODULE_DOCX_PROCESSING")
+configure_external_package("tema", TEMA_ROOT, "PATH_MODULE_TEMA")
 
-LOGS_ROOT = resolve_project_path(
-    "PATH_LOGS",
-    default=STORAGE_ROOT / "logs",
-)
-
-TEMPLATES_ROOT = resolve_project_path(
-    "PATH_TEMPLATES",
-    default=PROJECT_ROOT / "templates",
-)
-
+STORAGE_ROOT = resolve_project_path("PATH_STORAGE", "STORAGE_ROOT", default=PROJECT_ROOT / "storage")
+LOGS_ROOT = resolve_project_path("PATH_LOGS", default=STORAGE_ROOT / "logs")
+TEMPLATES_ROOT = resolve_project_path("PATH_TEMPLATES", default=PROJECT_ROOT / "templates")
 CONFERENCE_TEMPLATE_PATH = resolve_project_path(
     "PATH_CONFERENCE_TEMPLATE",
     "CONFERENCE_TEMPLATE_PATH",
     default=TEMPLATES_ROOT / "conference_template_v1.docx",
 )
-
 SUBMISSIONS_STORAGE_DIR = resolve_project_path(
     "SUBMISSIONS_STORAGE_DIR",
     default=STORAGE_ROOT / "submissions",
 )
+ISSUES_STORAGE_DIR = resolve_project_path(
+    "ISSUES_STORAGE_DIR",
+    default=STORAGE_ROOT / "issues",
+)
 
-STORAGE_ROOT.mkdir(parents=True, exist_ok=True)
-LOGS_ROOT.mkdir(parents=True, exist_ok=True)
-SUBMISSIONS_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+for directory in (STORAGE_ROOT, LOGS_ROOT, SUBMISSIONS_STORAGE_DIR, ISSUES_STORAGE_DIR):
+    directory.mkdir(parents=True, exist_ok=True)
 
-# После чтения .env публикуем уже нормализованные абсолютные пути в среде
-# главного процесса. Импортируемый DOCX-модуль и любые дочерние процессы
-# получают одинаковые значения независимо от текущей рабочей директории.
 os.environ.update(
     {
         "PATH_STORAGE": str(STORAGE_ROOT),
@@ -98,6 +82,7 @@ os.environ.update(
         "PATH_TEMPLATES": str(TEMPLATES_ROOT),
         "PATH_CONFERENCE_TEMPLATE": str(CONFERENCE_TEMPLATE_PATH),
         "PATH_MODULE_DOCX_PROCESSING": str(DOCX_PROCESSING_ROOT),
+        "PATH_MODULE_TEMA": str(TEMA_ROOT),
         "PATH_MODULE_SYSTEM": str(BASE_DIR),
     }
 )
@@ -118,6 +103,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "submissions.apps.SubmissionsConfig",
+    "tema.editorial.apps.EditorialConfig",
 ]
 
 MIDDLEWARE = [
@@ -165,10 +151,8 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-
 MEDIA_URL = "/media/"
 MEDIA_ROOT = STORAGE_ROOT
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CONFERENCE_DEFAULT_ID = "ai_quarterly_conf"

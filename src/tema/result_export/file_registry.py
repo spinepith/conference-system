@@ -1,19 +1,4 @@
-"""
-result_export/file_registry.py
-
-Реализует пункт 22.3 ТЗ («Файлы результата»): формирует единый реестр
-(manifest) файлов заявки, показывая, какие из ожидаемых файлов результата
-фактически существуют в папке заявки, а каких не хватает.
-
-Ожидаемый набор файлов заявки (storage/submissions/<submission_id>/):
-    original.docx
-    formatted_material.docx
-    formatted_material.pdf
-    extracted_metadata.json
-    formatting_report.json
-    check_report.json
-    author_report.pdf  (или author_report.docx)
-"""
+"""Result file registry for one submission."""
 
 from __future__ import annotations
 
@@ -21,8 +6,6 @@ import json
 from pathlib import Path
 from typing import Optional
 
-# Соответствие "логическое имя файла" -> "имя файла на диске".
-# author_report обрабатывается отдельно, т.к. допустимы два расширения.
 RESULT_FILE_SPEC: dict[str, Optional[str]] = {
     "original_docx": "original.docx",
     "formatted_docx": "formatted_material.docx",
@@ -33,37 +16,27 @@ RESULT_FILE_SPEC: dict[str, Optional[str]] = {
     "author_report": None,
 }
 
-# Файлы, без которых пакет для автора считается неполным (п. 22 ТЗ).
-REQUIRED_FOR_AUTHOR = ("formatted_docx", "formatted_pdf", "check_report")
+# check_report and author_report are produced by later modules and are optional
+# at the moment when the PDF stage follows student 2 in the workflow.
+REQUIRED_AFTER_FORMATTING = (
+    "original_docx",
+    "formatted_docx",
+    "formatted_pdf",
+    "extracted_metadata",
+    "formatting_report",
+)
 
 
 def _resolve_author_report(submission_dir: Path) -> Optional[Path]:
     for ext in ("pdf", "docx"):
         candidate = submission_dir / f"author_report.{ext}"
-        if candidate.exists():
+        if candidate.is_file() and candidate.stat().st_size > 0:
             return candidate
     return None
 
 
 def collect_result_files(submission_dir: str | Path) -> dict:
-    """
-    Сканирует папку заявки и строит реестр файлов результата.
-
-    Возвращает словарь вида:
-        {
-          "submission_dir": "...",
-          "files": {
-            "formatted_pdf": {
-                "path": "...", "filename": "formatted_material.pdf",
-                "size_bytes": 12345, "available": True
-            },
-            ...
-          },
-          "missing_files": ["author_report"],
-          "is_complete_for_author": False
-        }
-    """
-    submission_dir = Path(submission_dir)
+    submission_dir = Path(submission_dir).resolve()
     files: dict[str, dict] = {}
     missing: list[str] = []
 
@@ -72,39 +45,34 @@ def collect_result_files(submission_dir: str | Path) -> dict:
             path = _resolve_author_report(submission_dir)
             display_name = path.name if path else "author_report.pdf|.docx"
         else:
-            candidate = submission_dir / filename
-            path = candidate if candidate.exists() else None
-            display_name = filename
+            candidate = submission_dir / str(filename)
+            path = candidate if candidate.is_file() and candidate.stat().st_size > 0 else None
+            display_name = str(filename)
 
-        if path is not None:
-            files[key] = {
-                "path": str(path),
-                "filename": path.name,
-                "size_bytes": path.stat().st_size,
-                "available": True,
-            }
-        else:
-            files[key] = {
-                "path": None,
-                "filename": display_name,
-                "size_bytes": 0,
-                "available": False,
-            }
+        files[key] = {
+            "path": path.name if path else None,
+            "filename": path.name if path else display_name,
+            "size_bytes": path.stat().st_size if path else 0,
+            "available": bool(path),
+        }
+        if not path:
             missing.append(key)
 
+    missing_required = [key for key in REQUIRED_AFTER_FORMATTING if not files[key]["available"]]
+    missing_optional = [key for key in missing if key not in REQUIRED_AFTER_FORMATTING]
     return {
         "submission_dir": str(submission_dir),
         "files": files,
         "missing_files": missing,
-        "is_complete_for_author": all(files[k]["available"] for k in REQUIRED_FOR_AUTHOR),
+        "missing_required_files": missing_required,
+        "missing_optional_files": missing_optional,
+        "is_complete_after_formatting": not missing_required,
+        "is_complete_for_author": not missing,
     }
 
 
-def save_manifest(manifest: dict, output_path: str | Path) -> None:
-    """Сохраняет реестр файлов в JSON (result_manifest.json)."""
+def save_manifest(manifest: dict, output_path: str | Path) -> str:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    output_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    return str(output_path)
