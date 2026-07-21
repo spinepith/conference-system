@@ -17,6 +17,15 @@ from .services import SubmissionService, resolve_stored_file_path
 from .workflow import WorkflowEngine
 
 
+AUTHOR_VISIBLE_FILE_TYPES = {
+    "original_docx",
+    "revision_docx",
+    "formatted_docx",
+    "formatted_pdf",
+    "result_package",
+}
+
+
 def service() -> SubmissionService:
     return SubmissionService()
 
@@ -56,7 +65,12 @@ def status_page(request: HttpRequest, submission_id: str):
         submission = svc.get_submission_model(submission_id)
     except ObjectDoesNotExist as exc:
         raise Http404("Заявка не найдена") from exc
-    return render(request, "status.html", {"submission": submission})
+    author_files = submission.files.filter(file_type__in=AUTHOR_VISIBLE_FILE_TYPES)
+    return render(
+        request,
+        "status.html",
+        {"submission": submission, "author_files": author_files},
+    )
 
 
 @require_POST
@@ -109,6 +123,8 @@ def download_file(request: HttpRequest, file_id: int):
         file_row = SubmissionFile.objects.get(pk=file_id)
     except SubmissionFile.DoesNotExist as exc:
         raise Http404("Файл не найден") from exc
+    if file_row.file_type not in AUTHOR_VISIBLE_FILE_TYPES:
+        raise Http404("Служебный файл недоступен для скачивания.")
     path = resolve_stored_file_path(file_row.path)
     if not path.exists():
         raise Http404("Файл отсутствует в хранилище")

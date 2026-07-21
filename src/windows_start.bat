@@ -32,9 +32,9 @@ if not exist "%SYSTEM_DIR%\manage.py" (
     goto :fail
 )
 
-if not exist "%PROJECT_ROOT%\templates\conference_template_v1.docx" (
+if not exist "%PROJECT_ROOT%\storage\templates\conference_template_v1.docx" (
     echo [ERROR] Conference template was not found:
-    echo %PROJECT_ROOT%\templates\conference_template_v1.docx
+    echo %PROJECT_ROOT%\storage\templates\conference_template_v1.docx
     goto :fail
 )
 

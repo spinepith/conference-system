@@ -20,7 +20,7 @@
 - `result_manifest.json`;
 - `result_package.zip`.
 
-Пути регистрируются в `SubmissionFile`, поэтому PDF и ZIP доступны в интерфейсе автора и редактора.
+Пути регистрируются в `SubmissionFile`. Автору доступны итоговые DOCX, PDF и ZIP; служебные JSON остаются доступными только во внутреннем workflow и редакторской части. Пользовательский ZIP не содержит JSON-файлов.
 
 ## LibreOffice
 

@@ -91,13 +91,40 @@ class StudentThreeIntegrationTests(TestCase):
         self.assertTrue((directory / "result_manifest.json").is_file())
         self.assertTrue((directory / "result_package.zip").is_file())
         with zipfile.ZipFile(directory / "result_package.zip") as archive:
-            self.assertIn("formatted_material.pdf", archive.namelist())
-            self.assertIn("result_manifest.json", archive.namelist())
+            names = archive.namelist()
+            self.assertIn("formatted_material.docx", names)
+            self.assertIn("formatted_material.pdf", names)
+            self.assertNotIn("extracted_metadata.json", names)
+            self.assertNotIn("formatting_report.json", names)
+            self.assertNotIn("result_manifest.json", names)
 
         self.service.save_or_update_file_path(submission_id, "formatted_pdf", str(directory / "formatted_material.pdf"))
         self.service.save_or_update_file_path(submission_id, "result_package", str(directory / "result_package.zip"))
         self.assertEqual(self.client.get(f"/download/{submission_id}/formatted_pdf/").status_code, 200)
         self.assertEqual(self.client.get(f"/download/{submission_id}/result_package/").status_code, 200)
+
+
+    def test_author_page_hides_internal_json_files(self):
+        submission_id = self.create_submission()
+        directory = Path(self.temp_dir.name) / "submissions" / submission_id
+        metadata_path = directory / "extracted_metadata.json"
+        metadata_path.write_text("{}", encoding="utf-8")
+        metadata_file = self.service.save_or_update_file_path(
+            submission_id, "extracted_metadata", str(metadata_path)
+        )
+
+        formatted_path = directory / "formatted_material.docx"
+        formatted_path.write_bytes(b"docx")
+        self.service.save_or_update_file_path(submission_id, "formatted_docx", str(formatted_path))
+
+        response = self.client.get(f"/status/{submission_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "formatted_docx")
+        self.assertNotContains(response, "extracted_metadata")
+        self.assertEqual(
+            self.client.get(f"/download/{metadata_file['id']}/").status_code,
+            404,
+        )
 
 
     def test_old_pdf_does_not_mask_failed_conversion(self):

@@ -39,7 +39,7 @@ result_manifest.json
 result_package.zip
 ```
 
-`check_report.json` и `author_report.pdf|docx` будут автоматически добавлены в пакет после появления результатов следующих модулей.
+JSON-файлы являются служебными: они сохраняются для workflow и редактора, но не показываются автору заявки и не включаются в пользовательский ZIP. В `result_package.zip` попадают итоговые `formatted_material.docx`, `formatted_material.pdf` и, при наличии, `author_report.pdf|docx`.
 
 ## Быстрый запуск на Windows
 

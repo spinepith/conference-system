@@ -57,7 +57,10 @@ configure_external_package("tema", TEMA_ROOT, "PATH_MODULE_TEMA")
 
 STORAGE_ROOT = resolve_project_path("PATH_STORAGE", "STORAGE_ROOT", default=PROJECT_ROOT / "storage")
 LOGS_ROOT = resolve_project_path("PATH_LOGS", default=STORAGE_ROOT / "logs")
-TEMPLATES_ROOT = resolve_project_path("PATH_TEMPLATES", default=PROJECT_ROOT / "templates")
+TEMPLATES_ROOT = resolve_project_path(
+    "PATH_TEMPLATES",
+    default=STORAGE_ROOT / "templates",
+)
 CONFERENCE_TEMPLATE_PATH = resolve_project_path(
     "PATH_CONFERENCE_TEMPLATE",
     "CONFERENCE_TEMPLATE_PATH",

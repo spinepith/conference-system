@@ -62,9 +62,9 @@
 
 <section class="card">
   <h2>Файлы</h2>
-  {% if submission.files.all %}
+  {% if author_files %}
     <ul class="files-list">
-      {% for file in submission.files.all %}
+      {% for file in author_files %}
         <li><span>{{ file.file_type }}</span><a href="{% url 'download_file' file.id %}">Скачать</a></li>
       {% endfor %}
     </ul>

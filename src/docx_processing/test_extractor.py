@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--template",
         type=Path,
-        default=PROJECT_ROOT / "templates" / "conference_template_v1.docx",
+        default=PROJECT_ROOT / "storage" / "templates" / "conference_template_v1.docx",
         help="Conference template path.",
     )
     parser.add_argument(
