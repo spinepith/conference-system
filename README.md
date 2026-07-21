@@ -120,7 +120,7 @@ python manage.py create_test_issue
 - Django: `http://127.0.0.1:8000/`;
 - ContentValidation.Api: `http://127.0.0.1:5100/`.
 
-Перед запуском установите .NET 10 SDK и заполните `TOKEN` в корневом `.env`.
+Перед запуском установите .NET 10 SDK и заполните `API_KEY` в корневом `.env`.
 После формирования `extracted_metadata.json` workflow вызывает `POST /validate`,
 импортирует файлы из `checks/` в базу Django и регистрирует итоговый
 `check_result.json` как внутренний файл `check_report`. Автор видит понятные

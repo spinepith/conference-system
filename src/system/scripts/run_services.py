@@ -59,9 +59,9 @@ def validate_configuration() -> None:
     ):
         raise RuntimeError("ContentValidation требует установленный .NET 10 SDK.")
 
-    if not os.getenv("TOKEN", "").strip():
+    if not os.getenv("API_KEY", "").strip():
         raise RuntimeError(
-            f"В {ENV_FILE} не заполнен TOKEN для Gemini. "
+            f"В {ENV_FILE} не заполнен API_KEY для Gemini. "
             "Укажите ключ либо временно установите CONTENT_VALIDATION_ENABLED=0."
         )
     storage_value = os.getenv("PATH_STORAGE", "").strip()
