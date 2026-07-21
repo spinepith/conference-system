@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 
 from submissions.models import Submission
@@ -33,15 +35,48 @@ def _service() -> SubmissionService:
     return SubmissionService()
 
 
+def _display_datetime(value) -> str:
+    if not value:
+        return "—"
+    parsed = parse_datetime(value) if isinstance(value, str) else value
+    if parsed is None:
+        return str(value)
+    if timezone.is_aware(parsed):
+        parsed = timezone.localtime(parsed)
+    return parsed.strftime("%d.%m.%Y %H:%M:%S")
+
+
+def _with_display_times(submission: dict) -> dict:
+    submission["created_at_display"] = _display_datetime(submission.get("created_at"))
+    submission["updated_at_display"] = _display_datetime(submission.get("updated_at"))
+    for item in submission.get("status_history") or []:
+        item["changed_at_display"] = _display_datetime(item.get("changed_at"))
+    for item in submission.get("workflow_results") or []:
+        item["started_at_display"] = _display_datetime(item.get("started_at"))
+        item["finished_at_display"] = _display_datetime(item.get("finished_at"))
+    for item in submission.get("events") or []:
+        item["created_at_display"] = _display_datetime(item.get("created_at"))
+    decision = submission.get("editor_decision")
+    if decision:
+        decision["created_at_display"] = _display_datetime(decision.get("created_at"))
+    return submission
+
+
 def _with_summary(submission: dict) -> dict:
     checks = submission.get("checks") or []
     submission["overall_risk"] = (
         max((row.get("risk_level", "low") for row in checks), key=lambda value: RISK_ORDER.get(value, 0))
         if checks else None
     )
-    warnings = []
+    warnings: list[str] = []
     for check in checks:
-        warnings.extend(str(item) for item in check.get("warnings", []) if item)
+        for item in check.get("warnings", []) or []:
+            if isinstance(item, dict):
+                text = item.get("message") or item.get("reason") or item.get("code")
+            else:
+                text = str(item)
+            if text:
+                warnings.append(str(text))
     submission["checks_summary"] = warnings[:5]
     return submission
 
@@ -78,7 +113,7 @@ def editor_list(request: HttpRequest):
 
 def editor_card(request: HttpRequest, submission_id: str):
     try:
-        submission = _with_summary(_service().get_submission(submission_id))
+        submission = _with_display_times(_with_summary(_service().get_submission(submission_id)))
     except ObjectDoesNotExist as exc:
         raise Http404("Заявка не найдена") from exc
     return render(request, "editorial/editor_card.html", {"submission": submission})
@@ -97,16 +132,22 @@ def editor_decision(request: HttpRequest, submission_id: str):
         elif decision == "exclude_from_issue":
             issue_service.remove_submission(submission.issue_id, submission_id)
         else:
-            target = DECISION_TO_STATUS.get(decision)
-            if not target:
+            if decision not in DECISION_TO_STATUS:
                 raise ValueError("Неизвестное решение редактора.")
-            svc.update_submission_status(
+            effective_comment = comment or DECISION_LABELS[decision]
+            svc.apply_editor_decision(
                 submission_id,
-                target,
-                comment or DECISION_LABELS[decision],
+                decision,
                 editor_name,
+                effective_comment,
             )
-        svc.save_editor_decision(submission_id, decision, editor_name, comment)
+        if decision in {"include_in_issue", "exclude_from_issue"}:
+            svc.save_editor_decision(
+                submission_id,
+                decision,
+                editor_name,
+                comment or DECISION_LABELS[decision],
+            )
         messages.success(request, DECISION_LABELS.get(decision, "Решение сохранено."))
     except ObjectDoesNotExist as exc:
         raise Http404("Заявка не найдена") from exc

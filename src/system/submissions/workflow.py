@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.utils import timezone
 
+from .integrations.content_validation_stage import register_content_validation_stage
 from .integrations.docx_stages import register_docx_stages
 from .integrations.pdf_stages import register_pdf_stages
 
@@ -15,6 +16,7 @@ class WorkflowEngine:
 
     def _register_default_stages(self) -> None:
         register_docx_stages()
+        register_content_validation_stage()
         register_pdf_stages()
 
     def _apply_stage_status(

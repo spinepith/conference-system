@@ -98,6 +98,17 @@
           <h3>{{ check.title|default:check.check_id }}</h3>
           <p><b>Статус:</b> {{ check.status }} | <b>Риск:</b> {{ check.risk_level }}</p>
           <p>{{ check.summary|default:'Описание отсутствует.' }}</p>
+          {% if check.author_comment %}<p><b>Рекомендация:</b> {{ check.author_comment }}</p>{% endif %}
+          {% if check.warnings %}
+            <ul>
+              {% for warning in check.warnings %}
+                <li>
+                  {% if warning.message %}{{ warning.message }}{% else %}{{ warning }}{% endif %}
+                  {% if warning.recommendation %}<br><span class="muted">{{ warning.recommendation }}</span>{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
         </article>
       {% endfor %}
     {% else %}

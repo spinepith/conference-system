@@ -81,7 +81,11 @@ def run_workflow_page(request: HttpRequest, submission_id: str):
         if failed:
             messages.error(request, "Обработка завершилась с ошибками. Проверьте результаты workflow.")
         else:
-            messages.success(request, "Материал обработан: структура извлечена, DOCX оформлен, PDF и ZIP сформированы.")
+            messages.success(
+                request,
+                "Материал обработан: структура извлечена, DOCX оформлен, "
+                "автоматические проверки выполнены, PDF и ZIP сформированы.",
+            )
     except ObjectDoesNotExist as exc:
         raise Http404("Заявка не найдена") from exc
     except Exception as exc:
@@ -257,9 +261,9 @@ def api_submission_files(request: HttpRequest, submission_id: str):
 def api_editor_decision(request: HttpRequest, submission_id: str):
     try:
         payload = parse_json_request(request)
-        row = service().save_editor_decision(
+        row = service().apply_editor_decision(
             submission_id,
-            payload.get("decision", "editor_review"),
+            payload.get("decision", ""),
             payload.get("editor_name", "editor"),
             payload.get("comment", ""),
         )

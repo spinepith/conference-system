@@ -52,6 +52,20 @@ TEMA_ROOT = resolve_project_path(
     "TEMA_ROOT",
     default=SRC_ROOT / "tema",
 )
+
+CONTENT_VALIDATION_ROOT = resolve_project_path(
+    "PATH_MODULE_CONTENT_VALIDATION",
+    default=SRC_ROOT / "content-validation",
+)
+CONTENT_VALIDATION_API_URL = os.getenv(
+    "CONTENT_VALIDATION_API_URL",
+    "http://127.0.0.1:5100",
+).rstrip("/")
+CONTENT_VALIDATION_TIMEOUT = int(os.getenv("CONTENT_VALIDATION_TIMEOUT", "360"))
+CONTENT_VALIDATION_ENABLED = os.getenv(
+    "CONTENT_VALIDATION_ENABLED",
+    "1",
+).strip().lower() in {"1", "true", "yes", "on"}
 configure_external_package("docx_processing", DOCX_PROCESSING_ROOT, "PATH_MODULE_DOCX_PROCESSING")
 configure_external_package("tema", TEMA_ROOT, "PATH_MODULE_TEMA")
 
@@ -86,6 +100,8 @@ os.environ.update(
         "PATH_CONFERENCE_TEMPLATE": str(CONFERENCE_TEMPLATE_PATH),
         "PATH_MODULE_DOCX_PROCESSING": str(DOCX_PROCESSING_ROOT),
         "PATH_MODULE_TEMA": str(TEMA_ROOT),
+        "PATH_MODULE_CONTENT_VALIDATION": str(CONTENT_VALIDATION_ROOT),
+        "CONTENT_VALIDATION_API_URL": CONTENT_VALIDATION_API_URL,
         "PATH_MODULE_SYSTEM": str(BASE_DIR),
     }
 )

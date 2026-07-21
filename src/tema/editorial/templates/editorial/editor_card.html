@@ -1,10 +1,154 @@
 {% extends "base.html" %}
 {% block title %}{{ submission.submission_id }} — редактор{% endblock %}
 {% block content %}
-<section class="card"><p><a href="{% url 'editorial:editor_list' %}">← К списку заявок</a></p><div class="section-title"><div><h1>{{ submission.metadata.title_ru|default:submission.submission_id }}</h1><p><code>{{ submission.submission_id }}</code> · {{ submission.created_at }} · обновлено {{ submission.updated_at }}</p></div><span class="status big">{{ submission.status }}</span></div>
-<div class="grid two"><div><h3>Авторы</h3>{% for author in submission.authors %}<p>{{ author.full_name }}{% if author.organization %}, {{ author.organization }}{% endif %}</p>{% empty %}<p>{{ submission.author_contact.full_name|default:'—' }}</p>{% endfor %}</div><div><h3>Метаданные</h3><p><b>Секция:</b> {{ submission.metadata.section|default:'—' }}</p><p><b>Организация:</b> {{ submission.author_contact.organization|default:'—' }}</p><p><b>Риск:</b> {{ submission.overall_risk|default:'нет проверок' }}</p></div></div></section>
-<section class="grid two"><div class="card"><h2>Файлы</h2>{% if submission.files %}<ul class="files-list">{% for file_type,path in submission.files.items %}<li><span>{{ file_type }}</span><a href="{% url 'editorial:download_by_type' submission.submission_id file_type %}">Скачать</a></li>{% endfor %}</ul>{% else %}<p class="empty">Файлов нет.</p>{% endif %}<form method="post" action="{% url 'editorial:run_pdf_export' submission.submission_id %}">{% csrf_token %}<button class="button" type="submit">Пересобрать PDF и ZIP</button></form></div>
-<div class="card"><h2>Решение редактора</h2><form method="post" action="{% url 'editorial:editor_decision' submission.submission_id %}">{% csrf_token %}<label>Имя редактора<input name="editor_name" value="editor"></label><label>Комментарий<textarea name="comment" rows="3"></textarea></label><div class="decision-grid"><button class="button" name="decision" value="accept">Принять</button><button class="button danger" name="decision" value="reject">Отклонить</button><button class="button secondary" name="decision" value="revision">На доработку</button><button class="button secondary" name="decision" value="return_to_author">Автору на согласование</button><button class="button" name="decision" value="include_in_issue">Включить в выпуск</button><button class="button muted-button" name="decision" value="exclude_from_issue">Исключить из выпуска</button></div></form>{% if submission.editor_decision %}<p><b>Последнее решение:</b> {{ submission.editor_decision.decision }} · {{ submission.editor_decision.editor_name }} · {{ submission.editor_decision.comment }}</p>{% endif %}</div></section>
-<section class="card"><h2>Автоматические проверки</h2>{% for check in submission.checks %}<article class="check"><h3>{{ check.title|default:check.check_id }}</h3><p><b>Статус:</b> {{ check.status }} · <b>Риск:</b> {{ check.risk_level }}{% if check.score != None %} · <b>Оценка:</b> {{ check.score }}{% endif %}</p><p>{{ check.summary }}</p>{% if check.warnings %}<ul>{% for warning in check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>{% endif %}</article>{% empty %}<p class="empty">Проверок пока нет.</p>{% endfor %}</section>
-<section class="grid two"><div class="card"><h2>История статусов</h2><ul class="timeline">{% for item in submission.status_history %}<li><b>{{ item.from_status|default:'создание' }} → {{ item.to_status }}</b><br>{{ item.changed_at }} · {{ item.changed_by }}<br>{{ item.comment }}</li>{% empty %}<li>История пуста.</li>{% endfor %}</ul></div><div class="card"><h2>Workflow</h2>{% for item in submission.workflow_results %}<article class="check"><b>{{ item.stage_id }}</b> · {{ item.status }}<br>{{ item.message }}</article>{% empty %}<p class="empty">Workflow не запускался.</p>{% endfor %}<h3>События</h3>{% for item in submission.events %}<p><b>{{ item.event_type }}</b> · {{ item.created_at }}</p>{% empty %}<p class="empty">Событий нет.</p>{% endfor %}</div></section>
+<section class="card">
+  <p><a href="{% url 'editorial:editor_list' %}">← К списку заявок</a></p>
+  <div class="section-title">
+    <div>
+      <h1>{{ submission.metadata.title_ru|default:submission.submission_id }}</h1>
+      <p>
+        <code>{{ submission.submission_id }}</code> ·
+        создано {{ submission.created_at_display }} ·
+        обновлено {{ submission.updated_at_display }}
+      </p>
+    </div>
+    <span class="status big">{{ submission.status }}</span>
+  </div>
+  <div class="grid two">
+    <div>
+      <h3>Авторы</h3>
+      {% for author in submission.authors %}
+        <p>{{ author.full_name }}{% if author.organization %}, {{ author.organization }}{% endif %}</p>
+      {% empty %}
+        <p>{{ submission.author_contact.full_name|default:'—' }}</p>
+      {% endfor %}
+    </div>
+    <div>
+      <h3>Метаданные</h3>
+      <p><b>Секция:</b> {{ submission.metadata.section|default:'—' }}</p>
+      <p><b>Организация:</b> {{ submission.author_contact.organization|default:'—' }}</p>
+      <p><b>Риск:</b> {{ submission.overall_risk|default:'нет проверок' }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="card">
+    <h2>Файлы</h2>
+    {% if submission.files %}
+      <ul class="files-list">
+        {% for file_type,path in submission.files.items %}
+          <li><span>{{ file_type }}</span><a href="{% url 'editorial:download_by_type' submission.submission_id file_type %}">Скачать</a></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">Файлов нет.</p>
+    {% endif %}
+    <form method="post" action="{% url 'editorial:run_pdf_export' submission.submission_id %}">
+      {% csrf_token %}
+      <button class="button" type="submit">Пересобрать PDF и ZIP</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Решение редактора</h2>
+    <form method="post" action="{% url 'editorial:editor_decision' submission.submission_id %}">
+      {% csrf_token %}
+      <label>Имя редактора<input name="editor_name" value="editor"></label>
+      <label>Комментарий<textarea name="comment" rows="3"></textarea></label>
+      <div class="decision-grid">
+        <button type="submit" class="button" name="decision" value="accept">Принять</button>
+        <button type="submit" class="button danger" name="decision" value="reject">Отклонить</button>
+        <button type="submit" class="button secondary" name="decision" value="revision">На доработку</button>
+        <button type="submit" class="button secondary" name="decision" value="return_to_author">Автору на согласование</button>
+        <button type="submit" class="button" name="decision" value="include_in_issue">Включить в выпуск</button>
+        <button type="submit" class="button muted-button" name="decision" value="exclude_from_issue">Исключить из выпуска</button>
+      </div>
+    </form>
+    {% if submission.editor_decision %}
+      <p>
+        <b>Последнее решение:</b> {{ submission.editor_decision.decision }} ·
+        {{ submission.editor_decision.editor_name }} ·
+        {{ submission.editor_decision.created_at_display }}<br>
+        {{ submission.editor_decision.comment }}
+      </p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card">
+  <h2>Автоматические проверки</h2>
+  {% for check in submission.checks %}
+    <article class="check">
+      <h3>{{ check.title|default:check.check_id }}</h3>
+      <p><b>Статус:</b> {{ check.status }} · <b>Риск:</b> {{ check.risk_level }}{% if check.score != None %} · <b>Оценка:</b> {{ check.score }}{% endif %}</p>
+      <p>{{ check.summary }}</p>
+      {% if check.editor_comment %}<p><b>Редактору:</b> {{ check.editor_comment }}</p>{% endif %}
+      {% if check.author_comment %}<p><b>Автору:</b> {{ check.author_comment }}</p>{% endif %}
+      {% if check.warnings %}
+        <h4>Замечания</h4>
+        <ul>
+          {% for warning in check.warnings %}
+            <li>
+              {% if warning.message %}{{ warning.message }}{% else %}{{ warning }}{% endif %}
+              {% if warning.location %}<br><span class="muted">Место: {{ warning.location }}</span>{% endif %}
+              {% if warning.recommendation %}<br><span class="muted">Рекомендация: {{ warning.recommendation }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if check.flagged_fragments %}
+        <h4>Отмеченные фрагменты</h4>
+        <ul>
+          {% for fragment in check.flagged_fragments %}
+            <li>
+              <q>{{ fragment.fragment }}</q>
+              {% if fragment.risk_type %}<br><span class="muted">Тип риска: {{ fragment.risk_type }}</span>{% endif %}
+              {% if fragment.reason %}<br>{{ fragment.reason }}{% endif %}
+              {% if fragment.recommendation %}<br><span class="muted">Рекомендация: {{ fragment.recommendation }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </article>
+  {% empty %}
+    <p class="empty">Проверок пока нет.</p>
+  {% endfor %}
+</section>
+
+<section class="grid two">
+  <div class="card">
+    <h2>История статусов</h2>
+    <ul class="timeline">
+      {% for item in submission.status_history %}
+        <li>
+          <b>{{ item.from_status|default:'создание' }} → {{ item.to_status }}</b><br>
+          {{ item.changed_at_display }} · {{ item.changed_by }}<br>
+          {{ item.comment }}
+        </li>
+      {% empty %}
+        <li>История пуста.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Workflow</h2>
+    {% for item in submission.workflow_results %}
+      <article class="check">
+        <b>{{ item.stage_id }}</b> · {{ item.status }}<br>
+        <span class="muted">{{ item.started_at_display }} → {{ item.finished_at_display }}</span><br>
+        {{ item.message }}
+      </article>
+    {% empty %}
+      <p class="empty">Workflow не запускался.</p>
+    {% endfor %}
+    <h3>События</h3>
+    {% for item in submission.events %}
+      <p><b>{{ item.event_type }}</b> · {{ item.created_at_display }}</p>
+    {% empty %}
+      <p class="empty">Событий нет.</p>
+    {% endfor %}
+  </div>
+</section>
 {% endblock %}

@@ -112,3 +112,22 @@ python manage.py create_test_issue
 ```
 
 Подробности модуля 3 находятся в `src/tema/README.md`.
+
+## ContentValidation (модуль студента 4)
+
+`src/windows_start.bat` запускает два сервиса под одним супервизором:
+
+- Django: `http://127.0.0.1:8000/`;
+- ContentValidation.Api: `http://127.0.0.1:5100/`.
+
+Перед запуском установите .NET 10 SDK и заполните `TOKEN` в корневом `.env`.
+После формирования `extracted_metadata.json` workflow вызывает `POST /validate`,
+импортирует файлы из `checks/` в базу Django и регистрирует итоговый
+`check_result.json` как внутренний файл `check_report`. Автор видит понятные
+замечания в интерфейсе, но не получает служебные JSON-файлы.
+
+Для временного запуска без модуля установите:
+
+```env
+CONTENT_VALIDATION_ENABLED=0
+```

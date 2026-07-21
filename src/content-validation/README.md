@@ -188,3 +188,24 @@ ContentValidation.TestConsole/  ← Консоль для тестов
 ## **Требования**
 - .NET 10 SDK
 - Google Gemini API key
+## Запуск вместе с Django
+
+В интегрированном проекте API не нужно запускать вручную. Корневой
+`src/windows_start.bat` вызывает `src/system/scripts/run_services.py`, который:
+
+1. запускает `ContentValidation.Api` через `dotnet run`;
+2. ждёт успешный ответ `GET /health`;
+3. запускает Django;
+4. останавливает принадлежащий ему процесс API после остановки Django.
+
+Django вызывает:
+
+```http
+POST http://127.0.0.1:5100/validate
+Content-Type: application/json
+
+{"submissionId":"SUB-2026-Q1-00001"}
+```
+
+После ответа Django импортирует `checks/*.json` в таблицу `CheckResult`, а
+`check_result.json` регистрирует как внутренний файл `check_report`.

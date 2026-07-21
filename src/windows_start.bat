@@ -21,7 +21,7 @@ if not exist "%ENV_EXAMPLE%" (
 )
 
 if not exist "%ENV_FILE%" (
-    echo [1/6] Creating .env from .env.example...
+    echo [1/7] Creating .env from .env.example...
     copy /Y "%ENV_EXAMPLE%" "%ENV_FILE%" >nul
     if errorlevel 1 goto :fail
 )
@@ -50,8 +50,14 @@ if not exist "%PROJECT_ROOT%\src\tema\__init__.py" (
     goto :fail
 )
 
+if not exist "%PROJECT_ROOT%\src\content-validation\ContentValidation.Api\ContentValidation.Api.csproj" (
+    echo [ERROR] ContentValidation.Api project was not found:
+    echo %PROJECT_ROOT%\src\content-validation\ContentValidation.Api
+    goto :fail
+)
+
 if not exist "%PYTHON_EXE%" (
-    echo [2/6] Creating virtual environment...
+    echo [2/7] Creating virtual environment...
 
     where py >nul 2>&1
     if not errorlevel 1 (
@@ -78,26 +84,29 @@ if not exist "%PYTHON_EXE%" (
 cd /d "%SYSTEM_DIR%"
 if errorlevel 1 goto :fail
 
-echo [3/6] Installing dependencies...
+echo [3/7] Installing dependencies...
 "%PYTHON_EXE%" -m pip install --disable-pip-version-check -r requirements.txt
 if errorlevel 1 goto :fail
 
-echo [4/6] Applying database migrations...
+echo [4/7] Applying database migrations...
 "%PYTHON_EXE%" manage.py migrate
 if errorlevel 1 goto :fail
 
-echo [5/6] Creating initial data and checking configuration...
+echo [5/7] Creating initial data and checking configuration...
 "%PYTHON_EXE%" manage.py seed_initial_data
 if errorlevel 1 goto :fail
 
 "%PYTHON_EXE%" manage.py check
 if errorlevel 1 goto :fail
 
-echo [6/6] Starting server at http://127.0.0.1:8000/
-echo Press Ctrl+C to stop the server.
+echo [6/7] Preparing ContentValidation.Api...
+echo [7/7] Starting ContentValidation.Api and Django...
+echo Django: http://127.0.0.1:8000/
+echo ContentValidation: http://127.0.0.1:5100/health
+echo Press Ctrl+C to stop both services.
 echo.
 
-"%PYTHON_EXE%" manage.py runserver 127.0.0.1:8000
+"%PYTHON_EXE%" scripts\run_services.py
 exit /b %errorlevel%
 
 :fail

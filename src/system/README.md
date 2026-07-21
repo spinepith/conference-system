@@ -46,3 +46,14 @@ python manage.py check
 python manage.py makemigrations --check
 python manage.py test
 ```
+
+## Интеграция ContentValidation
+
+Этап `content_validation` зарегистрирован после `format_to_template` и до
+`export_pdf_and_package`. Он вызывает HTTP API модуля студента 4, сохраняет
+шесть результатов проверок в базе и переводит успешно обработанный материал в
+`needs_author_review`. Техническая ошибка API переводит заявку в `error`, но
+результат этапа и сообщение сохраняются в workflow.
+
+Запуск обоих сервисов выполняет `scripts/run_services.py`, вызываемый из
+`../windows_start.bat`.

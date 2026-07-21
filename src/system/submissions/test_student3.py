@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import zipfile
+from datetime import datetime, timezone as dt_timezone
 from pathlib import Path
 from subprocess import CompletedProcess
 from unittest.mock import patch
@@ -10,7 +11,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from reportlab.pdfgen import canvas
 
-from submissions.models import EditorDecision, Submission, StatusHistory
+from submissions.models import EditorDecision, Submission, StatusHistory, WorkflowStageResult
 from submissions.services import SubmissionService, resolve_stored_file_path
 from tema.editorial import services as editorial_services
 from tema.pdf_export.pdf_exporter import ExportResult, export_docx_to_pdf
@@ -156,6 +157,45 @@ class StudentThreeIntegrationTests(TestCase):
         self.assertEqual(Submission.objects.get(pk=submission_id).status, "accepted")
         self.assertTrue(EditorDecision.objects.filter(submission_id=submission_id, decision="accept").exists())
         self.assertTrue(StatusHistory.objects.filter(submission_id=submission_id, to_status="accepted").exists())
+
+    def test_editor_can_replace_previous_decision(self):
+        submission_id = self.create_submission(status="editor_review")
+        decisions = [
+            ("revision", "needs_revision"),
+            ("accept", "accepted"),
+            ("reject", "rejected"),
+            ("return_to_author", "needs_author_review"),
+        ]
+        for decision, expected_status in decisions:
+            response = self.client.post(
+                f"/editor/{submission_id}/decision/",
+                {"decision": decision, "editor_name": "Редактор", "comment": decision},
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(Submission.objects.get(pk=submission_id).status, expected_status)
+
+        self.assertEqual(
+            EditorDecision.objects.filter(submission_id=submission_id).count(),
+            len(decisions),
+        )
+
+    @override_settings(TIME_ZONE="Europe/Moscow", USE_TZ=True)
+    def test_editor_workflow_displays_local_time(self):
+        submission_id = self.create_submission(status="editor_review")
+        WorkflowStageResult.objects.create(
+            submission_id=submission_id,
+            stage_id="test_stage",
+            title="Тест",
+            status="success",
+            message="Готово",
+            started_at=datetime(2026, 7, 21, 12, 0, 0, tzinfo=dt_timezone.utc),
+            finished_at=datetime(2026, 7, 21, 12, 0, 5, tzinfo=dt_timezone.utc),
+        )
+
+        response = self.client.get(f"/editor/{submission_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "21.07.2026 15:00:00")
+        self.assertContains(response, "21.07.2026 15:00:05")
 
     def test_issue_collection_from_five_materials(self):
         issue_id = "2026_q1"

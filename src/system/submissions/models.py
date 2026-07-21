@@ -119,6 +119,9 @@ class CheckResult(models.Model):
     summary = models.TextField(blank=True)
     warnings = models.JSONField(default=list, blank=True)
     errors = models.JSONField(default=list, blank=True)
+    flagged_fragments = models.JSONField(default=list, blank=True)
+    author_comment = models.TextField(blank=True)
+    editor_comment = models.TextField(blank=True)
     raw_model_response_path = models.CharField(max_length=600, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

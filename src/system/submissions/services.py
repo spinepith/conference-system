@@ -25,6 +25,22 @@ from .models import (
 from .status_machine import assert_transition
 
 
+EDITOR_DECISION_TO_STATUS = {
+    "accept": "accepted",
+    "reject": "rejected",
+    "revision": "needs_revision",
+    "return_to_author": "needs_author_review",
+}
+
+
+def _local_iso(value) -> str | None:
+    if value is None:
+        return None
+    if timezone.is_aware(value):
+        value = timezone.localtime(value)
+    return value.isoformat()
+
+
 def clean_organization_name(name: str) -> str:
     return " ".join((name or "").split())
 
@@ -350,11 +366,21 @@ class SubmissionService:
         )
         return self.get_submission(submission_id)
 
-    def save_check_result(self, submission_id: str, check_result: dict[str, Any]) -> None:
-        submission = Submission.objects.get(pk=submission_id)
+    @transaction.atomic
+    def save_check_result(
+        self,
+        submission_id: str,
+        check_result: dict[str, Any],
+        *,
+        replace_existing: bool = False,
+    ) -> None:
+        submission = Submission.objects.select_for_update().get(pk=submission_id)
+        check_id = check_result.get("check_id", "unknown_check")
+        if replace_existing:
+            CheckResult.objects.filter(submission=submission, check_id=check_id).delete()
         CheckResult.objects.create(
             submission=submission,
-            check_id=check_result.get("check_id", "unknown_check"),
+            check_id=check_id,
             title=check_result.get("title", ""),
             status=check_result.get("status", "completed"),
             risk_level=check_result.get("risk_level", "low"),
@@ -362,9 +388,16 @@ class SubmissionService:
             summary=check_result.get("summary", ""),
             warnings=check_result.get("warnings", []),
             errors=check_result.get("errors", []),
+            flagged_fragments=check_result.get("flagged_fragments", []),
+            author_comment=check_result.get("author_comment", ""),
+            editor_comment=check_result.get("editor_comment", ""),
             raw_model_response_path=check_result.get("raw_model_response_path", ""),
         )
-        EventLog.objects.create(submission=submission, event_type="check_result_saved", payload=check_result)
+        EventLog.objects.create(
+            submission=submission,
+            event_type="check_result_saved",
+            payload={**check_result, "replaced_existing": replace_existing},
+        )
 
     def add_event(self, submission_id: str, event_type: str, payload: dict[str, Any] | None = None) -> None:
         submission = Submission.objects.get(pk=submission_id)
@@ -419,13 +452,95 @@ class SubmissionService:
 
     def save_editor_decision(self, submission_id: str, decision: str, editor_name: str = "editor", comment: str = "") -> dict[str, Any]:
         submission = Submission.objects.get(pk=submission_id)
-        row = EditorDecision.objects.create(submission=submission, decision=decision, editor_name=editor_name, comment=comment)
+        row = EditorDecision.objects.create(
+            submission=submission,
+            decision=decision,
+            editor_name=editor_name,
+            comment=comment,
+        )
         EventLog.objects.create(
             submission=submission,
             event_type="editor_decision_saved",
             payload={"decision": decision, "editor_name": editor_name, "comment": comment},
         )
-        return {"id": row.id, "decision": row.decision, "editor_name": row.editor_name, "comment": row.comment}
+        return {
+            "id": row.id,
+            "decision": row.decision,
+            "editor_name": row.editor_name,
+            "comment": row.comment,
+        }
+
+    @transaction.atomic
+    def apply_editor_decision(
+        self,
+        submission_id: str,
+        decision: str,
+        editor_name: str = "editor",
+        comment: str = "",
+    ) -> dict[str, Any]:
+        """Atomically save a human editor decision and its resulting status.
+
+        Generic workflow transitions are intentionally strict. An editor, however,
+        must be able to correct or replace an earlier human decision (for example,
+        change ``needs_revision`` to ``accepted``) without manually rebuilding an
+        intermediate status chain. Published and issue-included materials keep
+        their stronger safeguards.
+        """
+        target_status = EDITOR_DECISION_TO_STATUS.get(decision)
+        if not target_status:
+            raise ValueError("Неизвестное решение редактора.")
+
+        submission = Submission.objects.select_for_update().get(pk=submission_id)
+        from_status = submission.status
+        if from_status == "published":
+            raise ValueError("Опубликованный материал нельзя изменить без отмены публикации.")
+        if from_status == "included_in_issue":
+            raise ValueError("Сначала исключите материал из выпуска.")
+
+        if from_status != target_status:
+            submission.status = target_status
+            submission.save(update_fields=["status", "updated_at"])
+            StatusHistory.objects.create(
+                submission=submission,
+                from_status=from_status,
+                to_status=target_status,
+                changed_by=editor_name,
+                comment=comment,
+            )
+            EventLog.objects.create(
+                submission=submission,
+                event_type="status_changed",
+                payload={
+                    "from_status": from_status,
+                    "to_status": target_status,
+                    "comment": comment,
+                    "source": "editor_decision",
+                },
+            )
+
+        row = EditorDecision.objects.create(
+            submission=submission,
+            decision=decision,
+            editor_name=editor_name,
+            comment=comment,
+        )
+        EventLog.objects.create(
+            submission=submission,
+            event_type="editor_decision_saved",
+            payload={
+                "decision": decision,
+                "editor_name": editor_name,
+                "comment": comment,
+                "status": target_status,
+            },
+        )
+        return {
+            "id": row.id,
+            "decision": row.decision,
+            "editor_name": row.editor_name,
+            "comment": row.comment,
+            "status": target_status,
+        }
 
     @staticmethod
     def _latest_files(submission: Submission) -> dict[str, str]:
@@ -445,8 +560,8 @@ class SubmissionService:
             "conference_id": submission.conference_id,
             "issue_id": submission.issue_id,
             "status": submission.status,
-            "created_at": submission.created_at.isoformat(),
-            "updated_at": submission.updated_at.isoformat(),
+            "created_at": _local_iso(submission.created_at),
+            "updated_at": _local_iso(submission.updated_at),
             "author_contact": submission.author_contact,
             "metadata": submission.metadata,
             "authors": [
@@ -468,6 +583,9 @@ class SubmissionService:
                     "summary": row.summary,
                     "warnings": row.warnings,
                     "errors": row.errors,
+                    "flagged_fragments": row.flagged_fragments,
+                    "author_comment": row.author_comment,
+                    "editor_comment": row.editor_comment,
                     "raw_model_response_path": row.raw_model_response_path,
                 }
                 for row in submission.checks.all()
@@ -483,7 +601,7 @@ class SubmissionService:
                         "from_status": row.from_status,
                         "to_status": row.to_status,
                         "changed_by": row.changed_by,
-                        "changed_at": row.changed_at.isoformat(),
+                        "changed_at": _local_iso(row.changed_at),
                         "comment": row.comment,
                     }
                     for row in submission.status_history.all()
@@ -495,11 +613,13 @@ class SubmissionService:
                         "status": row.status,
                         "message": row.message,
                         "result": row.result_json,
+                        "started_at": _local_iso(row.started_at),
+                        "finished_at": _local_iso(row.finished_at),
                     }
                     for row in submission.workflow_results.all()
                 ],
                 "events": [
-                    {"event_type": row.event_type, "payload": row.payload, "created_at": row.created_at.isoformat()}
+                    {"event_type": row.event_type, "payload": row.payload, "created_at": _local_iso(row.created_at)}
                     for row in submission.events.all()
                 ],
             }
@@ -510,7 +630,7 @@ class SubmissionService:
                 "decision": last_decision.decision,
                 "editor_name": last_decision.editor_name,
                 "comment": last_decision.comment,
-                "created_at": last_decision.created_at.isoformat(),
+                "created_at": _local_iso(last_decision.created_at),
             }
         return data
 

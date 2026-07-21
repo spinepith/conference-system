@@ -4,6 +4,7 @@ import json
 import tempfile
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import patch
 
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -68,6 +69,7 @@ class ConferenceSystemTests(TestCase):
         self.override = override_settings(
             MEDIA_ROOT=Path(self.temp_dir.name),
             SUBMISSIONS_STORAGE_DIR=Path(self.temp_dir.name) / "submissions",
+            CONTENT_VALIDATION_ENABLED=False,
         )
         self.override.enable()
         self.service = SubmissionService()
@@ -120,7 +122,7 @@ class ConferenceSystemTests(TestCase):
 
         self.assertEqual(
             [row["stage_id"] for row in results],
-            ["extract_metadata", "format_to_template", "export_pdf_and_package"],
+            ["extract_metadata", "format_to_template", "content_validation", "export_pdf_and_package"],
         )
         self.assertNotIn("failed", [row["status"] for row in results])
 
@@ -145,7 +147,7 @@ class ConferenceSystemTests(TestCase):
         self.assertTrue(resolve_stored_file_path(files["formatted_pdf"]).exists())
         self.assertTrue(resolve_stored_file_path(files["result_manifest"]).exists())
         self.assertTrue(resolve_stored_file_path(files["result_package"]).exists())
-        self.assertEqual(WorkflowStageResult.objects.filter(submission_id=submission_id).count(), 3)
+        self.assertEqual(WorkflowStageResult.objects.filter(submission_id=submission_id).count(), 4)
 
     def test_second_stage_receives_file_created_by_first_stage(self):
         submission = self.create_submission()
@@ -180,4 +182,79 @@ class ConferenceSystemTests(TestCase):
         self.assertEqual(results[0]["status"], "failed")
         self.assertEqual(results[1]["status"], "skipped")
         self.assertEqual(results[2]["status"], "skipped")
+        self.assertEqual(results[3]["status"], "skipped")
         self.assertEqual(model.status, "error")
+
+
+    @override_settings(
+        CONTENT_VALIDATION_ENABLED=True,
+        CONTENT_VALIDATION_API_URL="http://127.0.0.1:5100",
+        CONTENT_VALIDATION_TIMEOUT=5,
+    )
+    def test_content_validation_stage_imports_results(self):
+        submission = self.create_submission()
+        submission_id = submission["submission_id"]
+        submission_dir = Path(settings.SUBMISSIONS_STORAGE_DIR) / submission_id
+
+        def fake_post(url, payload, timeout):
+            self.assertEqual(payload, {"submissionId": submission_id})
+            checks_dir = submission_dir / "checks"
+            checks_dir.mkdir(parents=True, exist_ok=True)
+            (checks_dir / "semantic_quality_check.json").write_text(
+                json.dumps(
+                    {
+                        "check_id": "semantic_quality_check",
+                        "title": "Смысловая проверка материала",
+                        "status": "warning",
+                        "risk_level": "medium",
+                        "score": 0.7,
+                        "summary": "Нужно уточнить методику.",
+                        "warnings": [{"message": "Слабое описание метода."}],
+                        "errors": [],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (submission_dir / "check_result.json").write_text(
+                json.dumps(
+                    {
+                        "submission_id": submission_id,
+                        "overall_status": "needs_attention",
+                        "overall_risk_level": "medium",
+                        "author_message": "Уточните методику.",
+                        "editor_message": "Проверьте методику.",
+                        "checks": [
+                            {
+                                "check_id": "semantic_quality_check",
+                                "title": "Смысловая проверка материала",
+                                "status": "warning",
+                                "risk_level": "medium",
+                                "summary": "Нужно уточнить методику.",
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            return {"status": "success", "submission_id": submission_id}
+
+        with patch(
+            "submissions.integrations.content_validation_stage._post_json",
+            side_effect=fake_post,
+        ):
+            results = WorkflowEngine().run(submission_id)
+
+        validation = next(row for row in results if row["stage_id"] == "content_validation")
+        self.assertEqual(validation["status"], "warning")
+        self.assertEqual(Submission.objects.get(pk=submission_id).status, "needs_author_review")
+        report_reference = self.service.get_latest_file_path(submission_id, "check_report")
+        self.assertTrue(report_reference)
+        self.assertEqual(resolve_stored_file_path(report_reference), submission_dir / "check_result.json")
+        self.assertEqual(
+            Submission.objects.get(pk=submission_id).checks.filter(
+                check_id="semantic_quality_check"
+            ).count(),
+            1,
+        )
