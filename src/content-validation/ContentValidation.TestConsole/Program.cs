@@ -16,7 +16,7 @@ public class Program {
         Console.InputEncoding  = System.Text.Encoding.UTF8;
         Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-        var apiKey = Environment.GetEnvironmentVariable("TOKEN")!;
+        var apiKey = Environment.GetEnvironmentVariable("API_KEY")!;
         var useJsonInput = false;
 
         var llmClient = new LlmClient(apiKey, Environment.GetEnvironmentVariable("LLM_MODEL") ?? "gemini-3.1-flash-lite");

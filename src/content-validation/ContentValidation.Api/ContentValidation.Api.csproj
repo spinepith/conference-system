@@ -1,11 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\ContentValidation\ContentValidation.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+	<Compile Include="..\Shared\SharedCliOptions.cs" Link="SharedCliOptions.cs" />
+  </ItemGroup>
+	
+  <ItemGroup>
     <PackageReference Include="DotNetEnv" Version="3.2.0" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 
   <PropertyGroup>

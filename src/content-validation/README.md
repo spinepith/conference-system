@@ -25,7 +25,7 @@ dotnet build -c Release
 ### 2. Настройка .env
 Создайте `.env` в корне проекта:
 ```env
-TOKEN=your-gemini-api-key
+API_KEY=your-gemini-api-key
 PATH_STORAGE=C:\path\to\storage
 ```
 
@@ -99,7 +99,7 @@ dotnet ContentValidation.Cli.dll <submission_id> [опции]
 ```
 
 ### Опции:
-- `--api-key <ключ>` - API ключ (по умолчанию из TOKEN)
+- `--api-key <ключ>` - API ключ (по умолчанию из API_KEY)
 - `--storage <путь>` - Путь к storage (по умолчанию из PATH_STORAGE)
 - `--prompts <путь>` - Путь к промптам (по умолчанию: Prompts)
 - `--model <модель>` - Модель Gemini (по умолчанию: gemini-3.1-flash-lite)

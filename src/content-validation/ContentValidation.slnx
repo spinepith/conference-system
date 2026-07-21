@@ -3,9 +3,9 @@
     <File Path=".gitignore" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/Элементы решения/bin/" />
-  <Folder Name="/Элементы решения/storage/" />
-  <Folder Name="/Элементы решения/Tests/" />
+  <Folder Name="/Элементы решения/Shared/">
+    <File Path="Shared/SharedCliOptions.cs" />
+  </Folder>
   <Project Path="ContentValidation.Api/ContentValidation.Api.csproj" />
   <Project Path="ContentValidation.Cli/ContentValidation.Cli.csproj" />
   <Project Path="ContentValidation.TestConsole/ContentValidation.TestConsole.csproj" />
