@@ -21,6 +21,7 @@ from .models import (
     Submission,
     SubmissionAuthor,
     SubmissionFile,
+    generate_access_token,
 )
 from .status_machine import assert_transition
 
@@ -190,6 +191,7 @@ class SubmissionService:
 
         submission = Submission.objects.create(
             submission_id=submission_id,
+            access_token=generate_access_token(),
             owner=owner,
             conference=conference,
             issue=issue,
