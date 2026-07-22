@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Администрирование системы{% endblock %}
+
+{% block content %}
+<section class="app-page">
+  <div class="shell admin-home">
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">Системная роль</span>
+        <h1>Администрирование платформы</h1>
+        <p>Администратор управляет пользователями, справочниками и системными настройками. Заявки и выпуски относятся к рабочему пространству редактора.</p>
+      </div>
+      <a class="button" href="/admin/">Открыть Django Admin</a>
+    </header>
+
+    <div class="dashboard-stats">
+      <article class="dashboard-stat"><div class="dashboard-stat__top"><span class="dashboard-stat__icon">U</span><span class="dashboard-stat__trend">Пользователи</span></div><strong>{{ platform_stats.users }}</strong><span>учётных записей</span></article>
+      <article class="dashboard-stat"><div class="dashboard-stat__top"><span class="dashboard-stat__icon">C</span><span class="dashboard-stat__trend">Конференции</span></div><strong>{{ platform_stats.conferences }}</strong><span>в системе</span></article>
+      <article class="dashboard-stat"><div class="dashboard-stat__top"><span class="dashboard-stat__icon">S</span><span class="dashboard-stat__trend">Материалы</span></div><strong>{{ platform_stats.submissions }}</strong><span>всего заявок</span></article>
+      <article class="dashboard-stat"><div class="dashboard-stat__top"><span class="dashboard-stat__icon">I</span><span class="dashboard-stat__trend">Выпуски</span></div><strong>{{ platform_stats.issues }}</strong><span>создано редакцией</span></article>
+    </div>
+
+    <div class="admin-action-grid">
+      <article class="card">
+        <span class="section-kicker">Управление</span>
+        <h2>Пользователи и роли</h2>
+        <p class="muted">Создавайте учётные записи, назначайте группы Authors и Editors, блокируйте доступ и меняйте права.</p>
+        <a class="button button--secondary" href="/admin/auth/user/">Открыть пользователей</a>
+      </article>
+      <article class="card">
+        <span class="section-kicker">Справочники</span>
+        <h2>Конференции и настройки</h2>
+        <p class="muted">Редактируйте основные сведения о конференциях и системные данные через административный интерфейс.</p>
+        <a class="button button--secondary" href="/admin/submissions/conference/">Открыть конференции</a>
+      </article>
+      <article class="card">
+        <span class="section-kicker">Публичная часть</span>
+        <h2>Проверка сайта</h2>
+        <p class="muted">Посмотрите опубликованный архив так, как его видят обычные посетители.</p>
+        <a class="button button--ghost" href="{% url 'editorial:archive_index' %}">Открыть архив</a>
+      </article>
+    </div>
+
+    <div class="notice-box">
+      <strong>Нужен доступ к редакторской панели?</strong>
+      <p>Добавьте аккаунт в группу <code>Editors</code>. Сам по себе статус администратора не даёт права принимать материалы или собирать выпуски.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

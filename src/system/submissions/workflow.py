@@ -70,7 +70,20 @@ class WorkflowEngine:
     def run(self, submission_id: str) -> list[dict]:
         self._register_default_stages()
         service = SubmissionService()
-        Submission.objects.get(pk=submission_id)  # explicit not-found check
+        submission = Submission.objects.get(pk=submission_id)  # explicit not-found check
+
+        # A previous failed run leaves the material in ``error``. Before a full
+        # retry, return it to the uploaded state so successful stages can move
+        # it through structure_extracted -> formatted -> author review. Without
+        # this reset every successful transition is rejected by the status
+        # machine and the card remains stuck on “Ошибка обработки”.
+        if submission.status == "error":
+            service.update_submission_status(
+                submission_id,
+                "uploaded",
+                "Повторный запуск обработки после устранения ошибки.",
+                "workflow",
+            )
 
         results: list[dict] = []
         for stage in registry.list():

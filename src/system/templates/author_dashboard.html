@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои материалы{% endblock %}
+
+{% block content %}
+<section class="app-page">
+  <div class="shell app-layout">
+    {% include 'partials/author_sidebar.html' %}
+    <div class="app-main">
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">Личный кабинет автора</span>
+          <h1>Мои материалы</h1>
+          <p>Здесь находятся ваши заявки, документы, замечания и текущие статусы обработки.</p>
+        </div>
+        <a class="button" href="{% url 'conferences' %}">Выбрать конференцию</a>
+      </header>
+
+      <div class="dashboard-stats">
+        <article class="dashboard-stat">
+          <div class="dashboard-stat__top"><span class="dashboard-stat__icon">Σ</span><span class="dashboard-stat__trend">Все заявки</span></div>
+          <strong>{{ author_stats.total }}</strong><span>материалов в кабинете</span>
+        </article>
+        <article class="dashboard-stat">
+          <div class="dashboard-stat__top"><span class="dashboard-stat__icon">↻</span><span class="dashboard-stat__trend">В процессе</span></div>
+          <strong>{{ author_stats.active }}</strong><span>проходят обработку</span>
+        </article>
+        <article class="dashboard-stat">
+          <div class="dashboard-stat__top"><span class="dashboard-stat__icon">!</span><span class="dashboard-stat__trend">Ваше действие</span></div>
+          <strong>{{ author_stats.attention }}</strong><span>требуют внимания</span>
+        </article>
+        <article class="dashboard-stat">
+          <div class="dashboard-stat__top"><span class="dashboard-stat__icon">✓</span><span class="dashboard-stat__trend">Архив</span></div>
+          <strong>{{ author_stats.published }}</strong><span>опубликовано</span>
+        </article>
+      </div>
+
+      {% if author_stats.attention %}
+      <section class="card card--accent">
+        <div class="section-title">
+          <div>
+            <span class="status status--warning">Требуется действие</span>
+            <h2 style="margin-top:14px;">Проверьте материалы с замечаниями</h2>
+            <p class="muted">Откройте карточку материала, изучите отчёт и подтвердите вариант либо загрузите исправленный DOCX.</p>
+          </div>
+          <a class="button button--secondary" href="#materials">Перейти к списку</a>
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="card" id="materials">
+        <div class="section-title">
+          <div>
+            <h2>Заявки автора</h2>
+            <p class="muted text-small">Публичные конференции находятся на отдельной странице сайта.</p>
+          </div>
+          <span class="muted text-small">{{ submissions|length }} заявок</span>
+        </div>
+
+        {% if submissions %}
+          <div class="material-list">
+            {% for item in submissions %}
+              <article class="material-card">
+                <div>
+                  <div class="material-card__meta">
+                    <code>{{ item.submission_id }}</code>
+                    <span>{{ item.issue_id }}</span>
+                    <span>{{ item.author_contact.organization|default:'Организация не указана' }}</span>
+                  </div>
+                  <h3>{{ item.metadata.title_ru|default:'Материал без названия' }}</h3>
+                  <div class="material-card__footer">
+                    <span class="status status-{{ item.status }}">{{ item.status_label }}</span>
+                    <div class="progress" aria-label="Прогресс обработки {{ item.progress_percent }}%">
+                      <div class="progress__bar" style="width: {{ item.progress_percent }}%"></div>
+                    </div>
+                    <span class="muted text-small">{{ item.progress_percent }}%</span>
+                  </div>
+                </div>
+                <a class="button button--ghost button--small" href="{% url 'status' item.submission_id %}">Открыть карточку →</a>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-state__icon">DOC</div>
+            <h3>У вас пока нет материалов</h3>
+            <p>Откройте каталог конференций, выберите выпуск с открытым приёмом и создайте первую заявку.</p>
+            <a class="button" href="{% url 'conferences' %}">Посмотреть конференции</a>
+          </div>
+        {% endif %}
+      </section>
+
+      {% if is_editor_role %}
+      <section class="card card--accent">
+        <div class="section-title">
+          <div>
+            <span class="eyebrow">Дополнительная роль</span>
+            <h2>Редакторская панель</h2>
+            <p class="muted">Этот аккаунт также состоит в группе Editors.</p>
+          </div>
+          <a class="button" href="{% url 'editorial:editor_list' %}">Открыть редакцию</a>
+        </div>
+      </section>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

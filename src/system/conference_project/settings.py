@@ -182,10 +182,18 @@ ORGANIZATIONS_SEED_PATH = BASE_DIR / "samples" / "organizations.txt"
 
 
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/cabinet/"
 LOGOUT_REDIRECT_URL = "/"
 
 INTERNAL_API_TOKEN = os.getenv("INTERNAL_API_TOKEN", "").strip()
+
+CREATE_DEMO_ACCOUNTS = os.getenv(
+    "CREATE_DEMO_ACCOUNTS",
+    "1" if DEBUG else "0",
+).strip().lower() in {"1", "true", "yes", "on"}
+DEMO_AUTHOR_USERNAME = os.getenv("DEMO_AUTHOR_USERNAME", "author")
+DEMO_EDITOR_USERNAME = os.getenv("DEMO_EDITOR_USERNAME", "editor")
+DEMO_ADMIN_USERNAME = os.getenv("DEMO_ADMIN_USERNAME", "admin")
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

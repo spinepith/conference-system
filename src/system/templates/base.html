@@ -4,46 +4,125 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Conference System MVP{% endblock %}</title>
+  <meta name="description" content="Платформа подачи, проверки и публикации материалов научной конференции по искусственному интеллекту.">
+  <title>{% block title %}AI Conference{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'styles.css' %}">
+  <script src="{% static 'site.js' %}" defer></script>
 </head>
-<body>
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <a class="brand" href="{% url 'index' %}">Conference System MVP</a>
-      <nav class="main-nav">
+<body class="{% block body_class %}{% endblock %}">
+  <header class="site-header">
+    <div class="shell site-header__inner">
+      <a class="site-brand" href="{% url 'index' %}" aria-label="На главную">
+        <span class="site-brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" role="img"><path d="M7 8.5h12.5A5.5 5.5 0 0 1 25 14v10H12.5A5.5 5.5 0 0 1 7 18.5v-10Z"/><path d="M12 4h7.5A5.5 5.5 0 0 1 25 9.5V13H12V4Z"/></svg>
+        </span>
+        <span>
+          <strong>AI Conference</strong>
+          <small>научная платформа</small>
+        </span>
+      </a>
+
+      <nav class="site-nav" aria-label="Основная навигация">
+        <a href="{% url 'index' %}#about">О конференции</a>
+        <a href="{% url 'conferences' %}">Конференции</a>
+        <a href="{% url 'index' %}#process">Как подать</a>
+        <a href="{% url 'index' %}#requirements">Требования</a>
         <a href="{% url 'editorial:archive_index' %}">Архив</a>
+      </nav>
+
+      <div class="site-header__actions">
         {% if user.is_authenticated %}
-          <a href="{% url 'index' %}">Мои материалы</a>
-          <a href="{% url 'submit' %}">Подать материал</a>
-          {% if is_editor_role %}
-            <a href="{% url 'editorial:editor_list' %}">Редактор</a>
-            <a href="{% url 'editorial:issue_list' %}">Выпуски</a>
-            <a href="{% url 'api_index' %}">API</a>
-          {% endif %}
-          {% if user.is_staff %}<a href="/admin/">Админка</a>{% endif %}
-          <span class="nav-user">{{ user.get_full_name|default:user.username }}</span>
+          <a class="user-menu" href="{{ cabinet_url }}" aria-label="Открыть личный кабинет">
+            <span class="user-avatar">{{ user.get_full_name|default:user.username|slice:':1'|upper }}</span>
+            <span class="user-menu__text">
+              <strong>{{ user.get_full_name|default:user.username }}</strong>
+              <small>{% if is_admin_role and not is_editor_role and not is_author_role %}Администратор{% elif is_editor_role and not is_author_role %}Редактор{% elif is_author_role %}Автор{% else %}Пользователь{% endif %}</small>
+            </span>
+          </a>
+          <a class="button button--ghost button--small" href="{{ cabinet_url }}">Личный кабинет</a>
           <form method="post" action="{% url 'accounts:logout' %}" class="nav-form">
             {% csrf_token %}
-            <button type="submit" class="nav-button">Выйти</button>
+            <button type="submit" class="button button--ghost button--small">Выйти</button>
           </form>
         {% else %}
-          <a href="{% url 'accounts:login' %}">Войти</a>
-          <a href="{% url 'accounts:register' %}">Регистрация</a>
+          <a class="button button--ghost button--small" href="{% url 'accounts:login' %}">Войти</a>
+          <a class="button button--small" href="{% url 'accounts:register' %}">Регистрация автора</a>
         {% endif %}
-      </nav>
+      </div>
+
+      <button class="mobile-menu-button" type="button" aria-expanded="false" aria-controls="mobile-navigation" data-mobile-menu-button>
+        <span></span><span></span><span></span>
+        <span class="sr-only">Открыть меню</span>
+      </button>
+    </div>
+
+    <div class="mobile-navigation" id="mobile-navigation" data-mobile-menu hidden>
+      <div class="shell mobile-navigation__inner">
+        <a href="{% url 'index' %}#about">О конференции</a>
+        <a href="{% url 'conferences' %}">Конференции</a>
+        <a href="{% url 'index' %}#process">Как подать</a>
+        <a href="{% url 'index' %}#requirements">Требования</a>
+        <a href="{% url 'editorial:archive_index' %}">Архив</a>
+        {% if user.is_authenticated %}
+          <a href="{{ cabinet_url }}">Личный кабинет</a>
+          <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Выйти</button></form>
+        {% else %}
+          <a href="{% url 'accounts:login' %}">Войти</a>
+          <a href="{% url 'accounts:register' %}">Регистрация автора</a>
+        {% endif %}
+      </div>
     </div>
   </header>
 
-  <main class="container">
-    {% if messages %}
-      <div class="messages">
-        {% for message in messages %}
-          <div class="message {{ message.tags }}">{{ message }}</div>
-        {% endfor %}
+  {% if messages %}
+    <div class="shell messages" aria-live="polite">
+      {% for message in messages %}
+        <div class="message {{ message.tags }}">
+          <span class="message__dot" aria-hidden="true"></span>
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main>{% block content %}{% endblock %}</main>
+
+  <footer class="site-footer">
+    <div class="shell site-footer__grid">
+      <div>
+        <a class="site-brand site-brand--footer" href="{% url 'index' %}">
+          <span class="site-brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32"><path d="M7 8.5h12.5A5.5 5.5 0 0 1 25 14v10H12.5A5.5 5.5 0 0 1 7 18.5v-10Z"/><path d="M12 4h7.5A5.5 5.5 0 0 1 25 9.5V13H12V4Z"/></svg>
+          </span>
+          <span><strong>AI Conference</strong><small>научная платформа</small></span>
+        </a>
+        <p>Приём, автоматическая проверка, согласование и публикация научных материалов в едином цифровом процессе.</p>
       </div>
-    {% endif %}
-    {% block content %}{% endblock %}
-  </main>
+      <div>
+        <h3>Конференция</h3>
+        <a href="{% url 'index' %}#about">О конференции</a>
+        <a href="{% url 'conferences' %}">Открытые конференции</a>
+        <a href="{% url 'index' %}#requirements">Требования</a>
+      </div>
+      <div>
+        <h3>Материалы</h3>
+        <a href="{% url 'editorial:archive_index' %}">Архив выпусков</a>
+        {% if is_author_role %}<a href="{% url 'submit' %}">Подать материал</a>{% else %}<a href="{% url 'conferences' %}">Выбрать конференцию</a>{% endif %}
+      </div>
+      <div>
+        <h3>Система</h3>
+        {% if user.is_authenticated %}
+          <a href="{{ cabinet_url }}">Личный кабинет</a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}">Вход в систему</a>
+          <a href="{% url 'accounts:register' %}">Регистрация автора</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="shell site-footer__bottom">
+      <span>© {% now 'Y' %} AI Conference</span>
+      <span>Автоматизированная система управления конференцией</span>
+    </div>
+  </footer>
 </body>
 </html>

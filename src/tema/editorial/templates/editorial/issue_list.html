@@ -1,5 +1,39 @@
-{% extends "base.html" %}{% block title %}Управление выпусками{% endblock %}{% block content %}
-<section class="hero"><h1>Управление выпусками</h1><p>Создание квартальных выпусков и сборка электронного сборника.</p></section>
-<section class="card"><h2>Создать выпуск</h2><form class="form narrow" method="post">{% csrf_token %}<label>Идентификатор<input name="issue_id" placeholder="2026_q2" required></label><label>Название<input name="title" required></label><div class="grid two"><label>Год<input type="number" name="year" value="2026" required></label><label>Квартал<input type="number" name="quarter" min="1" max="4" value="1" required></label></div><label>Организационный комитет — по одному человеку в строке<textarea name="org_committee" rows="4"></textarea></label><button class="button" type="submit">Создать выпуск</button></form></section>
-<section class="card"><h2>Выпуски</h2>{% if issues %}<table><thead><tr><th>Выпуск</th><th>Период</th><th>Статус</th><th>Ожидают</th><th>Включено</th><th>Файлы</th></tr></thead><tbody>{% for issue in issues %}<tr><td><a href="{% url 'editorial:issue_detail' issue.issue_id %}">{{ issue.title }}</a><br><code>{{ issue.issue_id }}</code></td><td>{{ issue.year }} / Q{{ issue.quarter }}</td><td>{{ issue.status }}</td><td>{{ issue.candidates_count }}</td><td>{{ issue.included_count }}</td><td>{% if issue.files.collection_pdf %}<a href="{% url 'editorial:download_collection' issue.issue_id %}">PDF</a> · <a href="{% url 'editorial:archive_issue' issue.issue_id %}">Архив</a>{% else %}не собран{% endif %}</td></tr>{% endfor %}</tbody></table>{% else %}<p class="empty">Выпусков нет.</p>{% endif %}</section>
+{% extends "base.html" %}
+{% block title %}Управление выпусками{% endblock %}
+{% block content %}
+<section class="app-page">
+  <div class="shell app-layout">
+    {% include 'partials/editor_sidebar.html' %}
+    <div class="app-main">
+      <header class="page-header"><div><span class="eyebrow">Редакторская панель</span><h1>Управление выпусками</h1><p>Создавайте квартальные выпуски, включайте принятые материалы и собирайте электронный архив.</p></div></header>
+
+      <section class="card">
+        <div class="form-section__heading"><h2>Создать новый выпуск</h2><p>Укажите служебный идентификатор и основные данные выпуска.</p></div>
+        <form class="form" method="post">
+          {% csrf_token %}
+          <div class="grid two"><label>Идентификатор<input name="issue_id" placeholder="2026_q2" required><span class="form-help">Латиница, цифры и подчёркивание.</span></label><label>Название<input name="title" placeholder="Искусственный интеллект и цифровые технологии" required></label></div>
+          <div class="grid two"><label>Год<input type="number" name="year" value="2026" required></label><label>Квартал<input type="number" name="quarter" min="1" max="4" value="1" required></label></div>
+          <label>Организационный комитет<textarea name="org_committee" rows="4" placeholder="По одному человеку в строке"></textarea></label>
+          <div><button class="button" type="submit">Создать выпуск</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="section-title"><div><h2>Все выпуски</h2><p class="muted text-small">Черновики, текущие и опубликованные сборники.</p></div><span class="muted text-small">{{ issues|length }} выпусков</span></div>
+        {% if issues %}
+          {% for issue in issues %}
+          <article class="issue-card">
+            <div>
+              <div class="issue-card__meta"><code>{{ issue.issue_id }}</code><span>{{ issue.year }} · Q{{ issue.quarter }}</span><span class="status {% if issue.status == 'published' %}status--success{% else %}status--neutral{% endif %}">{{ issue.status }}</span></div>
+              <h3 style="margin-top:12px;"><a href="{% url 'editorial:issue_detail' issue.issue_id %}">{{ issue.title }}</a></h3>
+              <div class="issue-card__meta"><span>Ожидают включения: {{ issue.candidates_count }}</span><span>В составе: {{ issue.included_count }}</span><span>{% if issue.files.collection_pdf %}Сборник сформирован{% else %}Сборник не собран{% endif %}</span></div>
+            </div>
+            <div class="split-actions"><a class="button button--ghost button--small" href="{% url 'editorial:issue_detail' issue.issue_id %}">Управлять</a>{% if issue.files.collection_pdf %}<a class="button button--secondary button--small" href="{% url 'editorial:download_collection' issue.issue_id %}">PDF</a>{% endif %}</div>
+          </article>
+          {% endfor %}
+        {% else %}<div class="empty-state"><div class="empty-state__icon">Q1</div><h3>Выпусков пока нет</h3><p>Создайте первый выпуск с помощью формы выше.</p></div>{% endif %}
+      </section>
+    </div>
+  </div>
+</section>
 {% endblock %}

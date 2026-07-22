@@ -21,6 +21,7 @@ from .models import (
     Submission,
     SubmissionAuthor,
     SubmissionFile,
+    generate_access_token,
 )
 from .status_machine import assert_transition
 
@@ -190,6 +191,7 @@ class SubmissionService:
 
         submission = Submission.objects.create(
             submission_id=submission_id,
+            access_token=generate_access_token(),
             owner=owner,
             conference=conference,
             issue=issue,
@@ -258,9 +260,10 @@ class SubmissionService:
     ) -> dict[str, Any]:
         organization = clean_organization_name(cleaned.get("organization") or "")
         authors = cleaned.get("authors_json") or []
+        issue = Issue.objects.select_related("conference").get(pk=cleaned["issue_id"])
         data = {
-            "conference_id": settings.CONFERENCE_DEFAULT_ID,
-            "issue_id": settings.ISSUE_DEFAULT_ID,
+            "conference_id": issue.conference_id,
+            "issue_id": issue.issue_id,
             "author_contact": {
                 "full_name": cleaned["full_name"],
                 "email": cleaned["email"],
@@ -767,6 +770,9 @@ class SubmissionService:
                 for row in submission.authors.all()
             ],
             "files": files,
+            # Detailed automatic feedback is exposed to the author only after
+            # the editor explicitly requests a revision. Until then it remains
+            # part of the editor's internal review workspace.
             "checks": [
                 {
                     "check_id": row.check_id,
@@ -775,11 +781,18 @@ class SubmissionService:
                     "risk_level": row.risk_level,
                     "summary": row.summary,
                     "warnings": row.warnings,
+                    "errors": row.errors,
+                    "flagged_fragments": row.flagged_fragments,
                     "author_comment": row.author_comment,
                 }
                 for row in submission.checks.all()
-            ],
+            ] if submission.status == "needs_revision" else [],
+            "editor_comment": "",
         }
+        if submission.status == "needs_revision":
+            last_revision = submission.editor_decisions.filter(decision="revision").first()
+            if last_revision:
+                data["editor_comment"] = last_revision.comment
         if compact:
             return data
         data["status_history"] = [

@@ -136,6 +136,8 @@ def _issue_row_to_dict(issue: Issue, candidates_count: int = 0, included_count: 
     return {
         "issue_id": issue.issue_id,
         "conference_id": issue.conference_id,
+        "conference_title": issue.conference.title,
+        "conference_description": issue.conference.description,
         "title": issue.title,
         "year": issue.year,
         "quarter": issue.quarter,
@@ -145,6 +147,7 @@ def _issue_row_to_dict(issue: Issue, candidates_count: int = 0, included_count: 
         "files": extras.files or {},
         "candidates_count": candidates_count,
         "included_count": included_count,
+        "submissions_count": Submission.objects.filter(issue=issue).count(),
     }
 
 
@@ -155,6 +158,11 @@ def list_issues_summary() -> list[dict[str, Any]]:
         included = Submission.objects.filter(issue=issue, status__in={"included_in_issue", "published"}).count()
         result.append(_issue_row_to_dict(issue, candidates, included))
     return result
+
+
+def list_open_issues_summary() -> list[dict[str, Any]]:
+    """Выпуски, в которые автору разрешено подать новый материал."""
+    return [row for row in list_issues_summary() if row.get("status") != "published"]
 
 
 def list_published_issues_summary() -> list[dict[str, Any]]:

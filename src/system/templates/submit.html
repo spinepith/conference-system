@@ -3,88 +3,83 @@
 {% block title %}Подать материал{% endblock %}
 
 {% block content %}
-<section class="card narrow">
-  <h1>Подача материала</h1>
-  <p class="muted">Заполните сведения о материале и загрузите файл в формате DOCX.</p>
+<section class="app-page">
+  <div class="shell app-layout">
+    {% include 'partials/author_sidebar.html' %}
+    <div class="app-main">
+      <a class="breadcrumb" href="{% url 'author_dashboard' %}">← Вернуться в личный кабинет</a>
+      <header class="page-header">
+        <div><span class="eyebrow">Новая заявка</span><h1>Подача материала</h1><p>Заполните основные сведения и загрузите DOCX. После отправки вы получите номер заявки.</p></div>
+      </header>
 
-  <form class="form" method="post" enctype="multipart/form-data" novalidate>
-    {% csrf_token %}
+      <form class="form" method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="error">{{ form.non_field_errors }}</div>{% endif %}
 
-    {% if form.non_field_errors %}
-      <div class="error">{{ form.non_field_errors }}</div>
-    {% endif %}
+        <section class="card form-section conference-select-section">
+          <div class="form-section__heading"><h2>1. Выберите конференцию</h2><p>Материал будет привязан к выбранному выпуску. Опубликованные выпуски недоступны для новой подачи.</p></div>
+          {% if has_open_issues %}
+            <label>{{ form.issue_id.label }}{{ form.issue_id }}{{ form.issue_id.errors }}{% if form.issue_id.help_text %}<span class="form-help">{{ form.issue_id.help_text }}</span>{% endif %}</label>
+          {% else %}
+            <div class="notice-box"><strong>Приём материалов закрыт</strong><p>Сейчас нет выпусков, в которые можно подать новый материал. Вернитесь позже или посмотрите опубликованный архив.</p></div>
+          {% endif %}
+        </section>
 
-    <label>
-      {{ form.full_name.label }}
-      {{ form.full_name }}
-      {{ form.full_name.errors }}
-    </label>
+        <section class="card form-section">
+          <div class="form-section__heading"><h2>2. Контактный автор</h2><p>На этот e-mail будут привязаны сведения о заявке.</p></div>
+          <div class="grid two">
+            <label>{{ form.full_name.label }}{{ form.full_name }}{{ form.full_name.errors }}</label>
+            <label>{{ form.email.label }}{{ form.email }}{{ form.email.errors }}</label>
+          </div>
+          <label class="organization-field" style="margin-top:18px;">
+            {{ form.organization.label }}
+            <div class="autocomplete" data-autocomplete>{{ form.organization }}<div class="autocomplete-menu" id="organization-menu" role="listbox" hidden></div></div>
+            {{ form.organization.errors }}
+          </label>
+        </section>
 
-    <label>
-      {{ form.email.label }}
-      {{ form.email }}
-      {{ form.email.errors }}
-    </label>
+        <section class="card form-section">
+          <div class="form-section__heading"><h2>3. Сведения о материале</h2><p>Эти данные будут использованы в карточке заявки и при автоматическом оформлении.</p></div>
+          <label>{{ form.title_ru.label }}{{ form.title_ru }}{{ form.title_ru.errors }}</label>
+          <div class="grid two" style="margin-top:18px;">
+            <label>{{ form.section.label }}{{ form.section }}{{ form.section.errors }}</label>
+            <label>{{ form.supervisor.label }}{{ form.supervisor }}{{ form.supervisor.errors }}</label>
+          </div>
+          <label style="margin-top:18px;">{{ form.abstract_ru.label }}{{ form.abstract_ru }}{{ form.abstract_ru.errors }}</label>
+          <label style="margin-top:18px;">{{ form.keywords_ru.label }}{{ form.keywords_ru }}{{ form.keywords_ru.errors }}<span class="form-help">Укажите ключевые слова через запятую.</span></label>
+        </section>
 
-    <label class="organization-field">
-      {{ form.organization.label }}
-      <div class="autocomplete" data-autocomplete>
-        {{ form.organization }}
-        <div class="autocomplete-menu" id="organization-menu" role="listbox" hidden></div>
-      </div>
-      {{ form.organization.errors }}
-    </label>
+        <section class="card form-section">
+          <div class="form-section__heading"><h2>4. Соавторы</h2><p>Контактный автор уже указан выше. Здесь можно добавить остальных участников в нужном порядке.</p></div>
+          <div class="authors-block">
+            {{ form.authors_json }}
+            <div id="authors-container"></div>
+            <button type="button" class="button button--secondary button--small" id="add-author">＋ Добавить соавтора</button>
+          </div>
+        </section>
 
-    <label>
-      {{ form.title_ru.label }}
-      {{ form.title_ru }}
-      {{ form.title_ru.errors }}
-    </label>
+        <section class="card form-section">
+          <div class="form-section__heading"><h2>5. Файл материала</h2><p>Система сохранит исходник, извлечёт структуру и подготовит оформленную версию.</p></div>
+          <div class="upload-dropzone">
+            <div class="upload-dropzone__icon">DOCX</div>
+            <strong>Загрузите документ Microsoft Word</strong>
+            <p class="muted text-small">Поддерживается только формат .docx</p>
+            <label class="sr-only">{{ form.docx_file.label }}</label>
+            {{ form.docx_file }}
+            {{ form.docx_file.errors }}
+          </div>
+        </section>
 
-    <label>
-      {{ form.section.label }}
-      {{ form.section }}
-      {{ form.section.errors }}
-    </label>
-
-    <div class="authors-block">
-      <h3>Авторы материала</h3>
-      <p class="muted">Добавьте соавторов отдельно. Порядок авторов будет сохранён.</p>
-
-      {{ form.authors_json }}
-
-      <div id="authors-container"></div>
-      <button type="button" class="button secondary" id="add-author">+ Добавить соавтора</button>
+        <section class="card card--accent">
+          <div class="section-title">
+            <div><h2>Готово к отправке?</h2><p class="muted text-small">После создания заявки файл будет сохранён, а статус и результаты появятся в личном кабинете.</p></div>
+            <button class="button" type="submit" {% if not has_open_issues %}disabled aria-disabled="true"{% endif %}>Отправить материал →</button>
+          </div>
+        </section>
+      </form>
     </div>
-
-    <label>
-      {{ form.supervisor.label }}
-      {{ form.supervisor }}
-      {{ form.supervisor.errors }}
-    </label>
-
-    <label>
-      {{ form.abstract_ru.label }}
-      {{ form.abstract_ru }}
-      {{ form.abstract_ru.errors }}
-    </label>
-
-    <label>
-      {{ form.keywords_ru.label }}
-      {{ form.keywords_ru }}
-      {{ form.keywords_ru.errors }}
-    </label>
-
-    <label>
-      {{ form.docx_file.label }}
-      {{ form.docx_file }}
-      {{ form.docx_file.errors }}
-    </label>
-
-    <button class="button" type="submit">Отправить материал</button>
-  </form>
+  </div>
 </section>
-
 
 <script>
 (function(){

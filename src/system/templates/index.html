@@ -1,49 +1,189 @@
 {% extends 'base.html' %}
 
-{% block title %}Conference System MVP{% endblock %}
+{% block title %}Научная конференция по искусственному интеллекту{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <h1>Автоматизированная система управления материалами конференции</h1>
-  <p>Подача материалов, автоматическая обработка, согласование с автором и финальное решение редактора.</p>
-  {% if user.is_authenticated %}
-    <a class="button" href="{% url 'submit' %}">Подать материал</a>
-    {% if is_editor_role %}<a class="button secondary" href="{% url 'editorial:editor_list' %}">Открыть редакторскую панель</a>{% endif %}
-  {% else %}
-    <a class="button" href="{% url 'accounts:register' %}">Зарегистрироваться как автор</a>
-    <a class="button secondary" href="{% url 'accounts:login' %}">Войти</a>
-  {% endif %}
+<section class="public-hero" id="about">
+  <div class="shell public-hero__grid">
+    <div>
+      <span class="eyebrow">Постоянно действующая научная конференция</span>
+      <h1>Публикуйте исследования в области <span>искусственного интеллекта</span></h1>
+      <p class="public-hero__lead">Загрузите материал в DOCX, получите автоматически оформленную версию и понятный отчёт проверки, согласуйте результат и отслеживайте решение редакции онлайн.</p>
+      <div class="hero-actions">
+        <a class="button" href="{% url 'conferences' %}">Выбрать конференцию</a>
+        <a class="button button--ghost" href="{% url 'editorial:archive_index' %}">Посмотреть выпуски</a>
+      </div>
+      <div class="hero-trust">
+        <span>Единый шаблон конференции</span>
+        <span>Прозрачные статусы</span>
+        <span>Финальное решение редактора</span>
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="hero-visual__orb"></div>
+      <div class="document-preview">
+        <div class="document-preview__top">
+          <span class="document-preview__label">Проверка завершена</span>
+          <span class="document-preview__file">material.docx</span>
+        </div>
+        <div class="document-preview__title"></div>
+        <div class="document-preview__line"></div><div class="document-preview__line"></div><div class="document-preview__line"></div>
+        <div class="document-preview__line"></div><div class="document-preview__line"></div><div class="document-preview__line"></div>
+        <div class="document-preview__checks">
+          <div class="mini-check"><span>Структура материала</span><span>Пройдено</span></div>
+          <div class="mini-check"><span>Тематическое соответствие</span><span>Пройдено</span></div>
+          <div class="mini-check"><span>Качество оформления</span><span>Пройдено</span></div>
+        </div>
+      </div>
+      <div class="floating-card floating-card--status"><span class="floating-card__icon">AI</span><span><strong>Автоматическая проверка</strong><small>Отчёт готов для автора</small></span></div>
+      <div class="floating-card floating-card--pdf"><span class="floating-card__icon">PDF</span><span><strong>Версия сформирована</strong><small>Готова к согласованию</small></span></div>
+    </div>
+  </div>
 </section>
 
-{% if user.is_authenticated %}
-<section class="card">
-  <div class="section-title">
-    <h2>Мои материалы</h2>
-    <span class="muted">{{ submissions|length }} заявок</span>
+<section class="current-issue">
+  <div class="shell">
+    <div class="current-issue__card">
+      <div class="current-issue__badge">✦</div>
+      <div>
+        <h2>{% if latest_issue %}{{ latest_issue.title }}{% else %}Приём научных материалов{% endif %}</h2>
+        <p>{% if latest_issue %}Текущий выпуск конференции{% else %}Зарегистрируйтесь и создайте заявку в личном кабинете автора.{% endif %}</p>
+        <div class="current-issue__meta">
+          {% if latest_issue %}<span>{{ latest_issue.year }} · Q{{ latest_issue.quarter }}</span><span>Статус: {{ latest_issue.status }}</span>{% endif %}
+          <span>Основной формат: DOCX</span>
+        </div>
+      </div>
+      {% if open_issues %}
+        {% if is_author_role %}<a class="button" href="{% url 'submit' %}?issue={{ latest_issue.issue_id|urlencode }}">Подать материал</a>{% elif user.is_authenticated %}<a class="button" href="{% url 'conferences' %}">Посмотреть конференции</a>{% else %}<a class="button" href="{% url 'accounts:register' %}">Стать автором</a>{% endif %}
+      {% else %}
+        <a class="button button--ghost" href="{% url 'editorial:archive_index' %}">Посмотреть архив</a>
+      {% endif %}
+    </div>
   </div>
+</section>
 
-  {% if submissions %}
-  <div class="table-scroll">
-    <table>
-      <thead>
-        <tr><th>Номер</th><th>Название</th><th>Организация</th><th>Статус</th><th></th></tr>
-      </thead>
-      <tbody>
-        {% for item in submissions %}
-        <tr>
-          <td><code>{{ item.submission_id }}</code></td>
-          <td>{{ item.metadata.title_ru|default:'Без названия' }}</td>
-          <td>{{ item.author_contact.organization|default:'—' }}</td>
-          <td><span class="status">{{ item.status_label }}</span></td>
-          <td><a href="{% url 'status' item.submission_id %}">Открыть</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<section class="section section--white">
+  <div class="shell">
+    <div class="section-heading section-heading--center">
+      <span class="section-kicker">Возможности платформы</span>
+      <h2>Всё необходимое для подготовки и публикации материала</h2>
+      <p>Система автоматизирует рутинные этапы, но сохраняет обязательный финальный контроль человека.</p>
+    </div>
+    <div class="feature-grid">
+      <article class="feature-card"><div class="feature-icon">01</div><h3>Автоматическое оформление</h3><p>Материал приводится к единому DOCX-шаблону конференции, даже если исходное оформление отличается.</p></article>
+      <article class="feature-card"><div class="feature-icon">02</div><h3>Понятный отчёт</h3><p>Автор получает замечания по структуре, смысловой связности, тематике и качеству оформления.</p></article>
+      <article class="feature-card"><div class="feature-icon">03</div><h3>Личный кабинет</h3><p>Статус, документы, исправленные версии и история обработки доступны в одном месте.</p></article>
+      <article class="feature-card"><div class="feature-icon">04</div><h3>Электронная публикация</h3><p>Принятые материалы включаются в выпуск, PDF-сборник и открытый архив конференции.</p></article>
+    </div>
   </div>
-  {% else %}
-    <p class="empty">У вас пока нет заявок.</p>
-  {% endif %}
+</section>
+
+<section class="section section--soft" id="process">
+  <div class="shell">
+    <div class="section-heading section-heading--center">
+      <span class="section-kicker">Путь автора</span>
+      <h2>От DOCX-файла до публикации в шесть шагов</h2>
+      <p>На каждом этапе вы видите актуальный статус и понимаете, требуется ли действие.</p>
+    </div>
+    <div class="process-grid">
+      <article class="process-step"><div class="process-step__number">1</div><h3>Загрузка</h3><p>Форма автора и исходный DOCX</p></article>
+      <article class="process-step"><div class="process-step__number">2</div><h3>Оформление</h3><p>Извлечение данных и единый шаблон</p></article>
+      <article class="process-step"><div class="process-step__number">3</div><h3>Проверка</h3><p>Структура, содержание и риски</p></article>
+      <article class="process-step"><div class="process-step__number">4</div><h3>Согласование</h3><p>Подтверждение или исправленная версия</p></article>
+      <article class="process-step"><div class="process-step__number">5</div><h3>Редактор</h3><p>Финальное решение человека</p></article>
+      <article class="process-step"><div class="process-step__number">6</div><h3>Публикация</h3><p>Выпуск и электронный сборник</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section section--white">
+  <div class="shell">
+    <div class="section-heading">
+      <span class="section-kicker">Научные направления</span>
+      <h2>Тематики конференции</h2>
+      <p>Платформа подходит для тезисов, коротких научных сообщений, студенческих и магистерских исследований.</p>
+    </div>
+    <div class="topic-grid">
+      <a class="topic-card" href="{% url 'conferences' %}"><span class="topic-card__number">01</span><strong>Искусственный интеллект в образовании</strong></a>
+      <a class="topic-card" href="{% url 'conferences' %}"><span class="topic-card__number">02</span><strong>Машинное обучение и анализ данных</strong></a>
+      <a class="topic-card" href="{% url 'conferences' %}"><span class="topic-card__number">03</span><strong>Компьютерное зрение</strong></a>
+      <a class="topic-card" href="{% url 'conferences' %}"><span class="topic-card__number">04</span><strong>Обработка естественного языка</strong></a>
+      <a class="topic-card" href="{% url 'conferences' %}"><span class="topic-card__number">05</span><strong>Интеллектуальные информационные системы</strong></a>
+      <a class="topic-card" href="{% url 'conferences' %}"><span class="topic-card__number">06</span><strong>Прикладные проекты и исследования</strong></a>
+    </div>
+  </div>
+</section>
+
+<section class="section section--soft" id="requirements">
+  <div class="shell requirements-layout">
+    <div>
+      <span class="section-kicker">Перед подачей</span>
+      <h2>Краткие требования к материалу</h2>
+      <p class="muted">Необязательно вручную повторять сложное оформление: система извлечёт структуру и сформирует новую версию по шаблону конференции.</p>
+      <div class="hero-actions">
+        {% if is_author_role %}<a class="button" href="{% url 'conferences' %}">Выбрать конференцию</a>{% elif user.is_authenticated %}<a class="button" href="{{ cabinet_url }}">Открыть кабинет</a>{% else %}<a class="button" href="{% url 'accounts:register' %}">Создать аккаунт автора</a>{% endif %}
+        {% if user.is_authenticated %}<a class="button button--ghost" href="{{ cabinet_url }}">Личный кабинет</a>{% else %}<a class="button button--ghost" href="{% url 'accounts:login' %}">У меня есть аккаунт</a>{% endif %}
+      </div>
+    </div>
+    <div class="requirements-panel">
+      <ul class="requirement-list">
+        <li><span><strong>Формат DOCX</strong><span>Основной входной формат материалов конференции.</span></span></li>
+        <li><span><strong>Название и сведения об авторах</strong><span>ФИО, организация и e-mail контактного автора.</span></span></li>
+        <li><span><strong>Аннотация и ключевые слова</strong><span>Краткое содержание работы и 3–7 ключевых слов.</span></span></li>
+        <li><span><strong>Основной текст и литература</strong><span>Связное описание цели, метода, результатов и выводов.</span></span></li>
+        <li><span><strong>Решение остаётся за редактором</strong><span>Автоматические проверки носят рекомендательный характер.</span></span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section section--dark">
+  <div class="shell">
+    <div class="section-heading section-heading--center">
+      <span class="section-kicker" style="color:#8fb0ff;">Цифровой процесс</span>
+      <h2 style="color:white;">Система, а не набор разрозненных файлов</h2>
+      <p style="color:#b9c6dd;">Все действия сохраняются в истории, документы доступны по ролям, а опубликованные материалы попадают в публичный архив.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-block"><strong>6</strong><span>основных этапов публикации</span></div>
+      <div class="stat-block"><strong>4+</strong><span>автоматических проверок</span></div>
+      <div class="stat-block"><strong>{{ platform_stats.published_issues }}</strong><span>опубликованных выпусков</span></div>
+      <div class="stat-block"><strong>{{ platform_stats.published_materials }}</strong><span>материалов в архиве</span></div>
+    </div>
+  </div>
+</section>
+
+{% if published_issues %}
+<section class="section section--white">
+  <div class="shell">
+    <div class="section-title" style="margin-bottom:30px;">
+      <div class="section-heading" style="margin:0;"><span class="section-kicker">Публичный архив</span><h2>Последние выпуски</h2></div>
+      <a class="link-arrow" href="{% url 'editorial:archive_index' %}">Все выпуски</a>
+    </div>
+    <div class="archive-grid">
+      {% for issue in published_issues %}
+      <article class="archive-card">
+        <div class="archive-card__meta"><span>{{ issue.year }} · Q{{ issue.quarter }}</span><span class="status status--success">Опубликован</span></div>
+        <h3>{{ issue.title }}</h3>
+        <p class="muted text-small">Материалов в выпуске: {{ issue.included_count }}</p>
+        <div class="archive-card__actions">
+          {% if issue.files.archive_page %}<a class="link-arrow" href="{% url 'editorial:archive_issue' issue.issue_id %}">Открыть</a>{% endif %}
+          {% if issue.files.collection_pdf %}<a href="{% url 'editorial:download_collection' issue.issue_id %}">Скачать PDF</a>{% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
 </section>
 {% endif %}
+
+<section class="section section--compact section--white">
+  <div class="shell">
+    <div class="cta-card">
+      <div><h2>Готовы подать научный материал?</h2><p>Создайте аккаунт автора, заполните сведения и загрузите DOCX. Номер заявки появится сразу после отправки.</p></div>
+      {% if is_author_role %}<a class="button" href="{% url 'conferences' %}">Выбрать конференцию</a>{% elif user.is_authenticated %}<a class="button" href="{{ cabinet_url }}">Открыть кабинет</a>{% else %}<a class="button" href="{% url 'accounts:register' %}">Начать подачу</a>{% endif %}
+    </div>
+  </div>
+</section>
 {% endblock %}

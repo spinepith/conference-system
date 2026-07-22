@@ -3,6 +3,7 @@ import json
 
 
 class SubmissionForm(forms.Form):
+    issue_id = forms.ChoiceField(label="Конференция и выпуск")
     full_name = forms.CharField(label="ФИО контактного автора", max_length=255)
     email = forms.EmailField(label="E-mail")
     organization = forms.CharField(label="Организация", max_length=400)
@@ -13,6 +14,13 @@ class SubmissionForm(forms.Form):
     abstract_ru = forms.CharField(label="Аннотация", required=False, widget=forms.Textarea(attrs={"rows": 4}))
     keywords_ru = forms.CharField(label="Ключевые слова", required=False)
     docx_file = forms.FileField(label="Файл DOCX")
+
+
+    def __init__(self, *args, issue_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["issue_id"].choices = issue_choices or []
+        if not self.fields["issue_id"].choices:
+            self.fields["issue_id"].help_text = "Сейчас нет выпусков с открытым приёмом материалов."
 
     def clean_docx_file(self):
         file = self.cleaned_data["docx_file"]

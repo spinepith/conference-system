@@ -1,0 +1,27 @@
+<aside class="app-sidebar" aria-label="Панель редактора">
+  <div class="app-sidebar__label">Рабочее пространство</div>
+  <nav>
+    <a href="{% url 'editorial:editor_list' %}" class="{% if request.resolver_match.url_name == 'editor_list' or request.resolver_match.url_name == 'editor_card' %}is-active{% endif %}">
+      <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4V5Z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+      Заявки
+    </a>
+    <a href="{% url 'editorial:issue_list' %}" class="{% if request.resolver_match.url_name == 'issue_list' or request.resolver_match.url_name == 'issue_detail' %}is-active{% endif %}">
+      <svg viewBox="0 0 24 24"><path d="M4 7h16v13H4V7Zm2-3h12l2 3H4l2-3Z"/><path d="M9 11h6"/></svg>
+      Выпуски
+    </a>
+    <a href="{% url 'editorial:archive_index' %}">
+      <svg viewBox="0 0 24 24"><path d="M5 4h14v16H5V4Z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+      Публичный архив
+    </a>
+    {% if user.is_staff %}
+      <a href="/admin/">
+        <svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V7l-8-4Z"/><path d="M9 12h6M12 9v6"/></svg>
+        Администрирование
+      </a>
+    {% endif %}
+  </nav>
+  <div class="app-sidebar__profile">
+    <span class="user-avatar">{{ user.get_full_name|default:user.username|slice:':1'|upper }}</span>
+    <span><strong>{{ user.get_full_name|default:user.username }}</strong><small>Редактор</small></span>
+  </div>
+</aside>

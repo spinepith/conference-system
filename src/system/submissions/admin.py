@@ -6,7 +6,6 @@ from .models import (
     Conference,
     EditorDecision,
     EventLog,
-    Issue,
     Organization,
     StatusHistory,
     Submission,
@@ -16,7 +15,6 @@ from .models import (
 
 # Админка остаётся стандартной: только регистрация моделей без кастомных шаблонов и оформления.
 admin.site.register(Conference)
-admin.site.register(Issue)
 admin.site.register(Organization)
 admin.site.register(Submission)
 admin.site.register(Author)

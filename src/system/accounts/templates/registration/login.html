@@ -1,17 +1,43 @@
 {% extends "base.html" %}
-{% block title %}Вход{% endblock %}
+{% block title %}Вход в систему{% endblock %}
 {% block content %}
-<section class="card narrow auth-card">
-  <h1>Вход</h1>
-  <form method="post" class="form">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    {% for field in form %}
-      <label>{{ field.label }}{{ field }}{{ field.errors }}</label>
-    {% endfor %}
-    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-    <button class="button" type="submit">Войти</button>
-  </form>
-  <p>Нет аккаунта автора? <a href="{% url 'accounts:register' %}">Зарегистрироваться</a></p>
+<section class="auth-page">
+  <div class="shell auth-layout">
+    <div class="auth-intro">
+      <span class="eyebrow">Личный кабинет</span>
+      <h1>Весь путь научного материала — в одном интерфейсе</h1>
+      <p>После входа вы попадёте в кабинет своей роли. Публичные конференции и архив при этом всегда остаются доступны через верхнее меню.</p>
+      <ul class="auth-benefits"><li>История обработки и прозрачные статусы</li><li>Отчёты автоматических проверок</li><li>Раздельные кабинеты автора, редактора и администратора</li></ul>
+    </div>
+    <section class="card auth-card">
+      <div class="auth-card__head"><span class="eyebrow">Добро пожаловать</span><h2>Вход в систему</h2><p>Введите логин и пароль.</p></div>
+      <form method="post" class="form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}<label>{{ field.label }}{{ field }}{{ field.errors }}</label>{% endfor %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <button class="button button--wide" type="submit">Войти</button>
+      </form>
+
+      {% if show_demo_accounts %}
+      <div class="demo-accounts">
+        <div class="demo-accounts__head">
+          <strong>Тестовые аккаунты</strong>
+          <span>для локальной демонстрации</span>
+        </div>
+        {% for account in demo_accounts %}
+          <div class="demo-account-row">
+            <span class="demo-account-row__role">{{ account.role }}</span>
+            <code>{{ account.username }}</code>
+            <code>{{ account.password }}</code>
+          </div>
+        {% endfor %}
+        <p>Если аккаунты ещё не созданы, выполните <code>python manage.py setup_demo_accounts</code>.</p>
+      </div>
+      {% endif %}
+
+      <div class="auth-card__footer">Нет аккаунта автора? <a href="{% url 'accounts:register' %}">Зарегистрироваться</a></div>
+    </section>
+  </div>
 </section>
 {% endblock %}

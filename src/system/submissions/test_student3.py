@@ -16,6 +16,7 @@ from reportlab.pdfgen import canvas
 from submissions.models import EditorDecision, Submission, StatusHistory, WorkflowStageResult
 from submissions.services import SubmissionService, resolve_stored_file_path
 from tema.editorial import services as editorial_services
+from tema.issue_builder.archive_page import ensure_archive_sticky_footer
 from tema.pdf_export.pdf_exporter import ExportResult, export_docx_to_pdf
 from tema.result_export.service import finalize_submission_files
 
@@ -222,6 +223,16 @@ class StudentThreeIntegrationTests(TestCase):
         self.assertContains(response, "21.07.2026 15:00:00")
         self.assertContains(response, "21.07.2026 15:00:05")
 
+    def test_existing_archive_html_gets_sticky_footer_upgrade(self):
+        old_html = (
+            '<style>*{box-sizing:border-box}html{scroll-behavior:smooth}'
+            'body{margin:0;color:#111}main{padding:65px 0}</style>'
+        )
+        upgraded = ensure_archive_sticky_footer(old_html)
+        self.assertIn('body{display:flex', upgraded)
+        self.assertIn('min-height:100dvh', upgraded)
+        self.assertIn('main{flex:1 0 auto', upgraded)
+
     def test_issue_collection_from_five_materials(self):
         issue_id = "2026_q1"
         submission_ids = []
@@ -237,6 +248,10 @@ class StudentThreeIntegrationTests(TestCase):
         archive = resolve_stored_file_path(issue["files"]["archive_page"])
         self.assertTrue(collection.is_file())
         self.assertTrue(archive.is_file())
+        archive_html = archive.read_text(encoding="utf-8")
+        self.assertIn("display:flex", archive_html)
+        self.assertIn("min-height:100dvh", archive_html)
+        self.assertIn("main{flex:1 0 auto", archive_html)
         self.assertGreater(collection.stat().st_size, 0)
         self.assertEqual(Submission.objects.filter(pk__in=submission_ids, status="published").count(), 5)
         self.assertEqual(self.client.get(f"/issues/{issue_id}/download/collection/").status_code, 200)

@@ -151,7 +151,8 @@ internal abstract class BaseChecker {
                             if (item.ValueKind is JsonValueKind.Object) {
                                 result.FlaggedFragments.Add(
                                     new CheckResult.FlaggedFragment {
-                                        Fragment       = GetStringProperty(item, "text"),
+                                        Fragment       = GetStringProperty(item, "fragment")
+                                                         ?? GetStringProperty(item, "text"),
                                         RiskType       = GetStringProperty(item, "risk_type"),
                                         Reason         = GetStringProperty(item, "reason"),
                                         Recommendation = GetStringProperty(item, "recommendation")

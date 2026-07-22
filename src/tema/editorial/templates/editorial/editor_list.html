@@ -1,18 +1,57 @@
 {% extends "base.html" %}
 {% block title %}Редакторская панель{% endblock %}
 {% block content %}
-<section class="hero"><h1>Редакторская панель</h1><p>Заявки, автоматические проверки, файлы и решения редактора.</p></section>
-<section class="card">
-<form class="filters" method="get">
-<label>Выпуск<select name="issue_id"><option value="">Все выпуски</option>{% for issue in issues %}<option value="{{ issue.issue_id }}" {% if filter_issue_id == issue.issue_id %}selected{% endif %}>{{ issue.title }} ({{ issue.year }} Q{{ issue.quarter }})</option>{% endfor %}</select></label>
-<label>Статус<select name="status"><option value="">Все статусы</option>{% for value in statuses %}<option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
-<label>Автор или название<input name="q" value="{{ filter_q }}" placeholder="Введите строку поиска"></label>
-<div><button class="button" type="submit">Найти</button> <a class="button muted-button" href="{% url 'editorial:editor_list' %}">Сбросить</a></div>
-</form>
-</section>
-<section class="card">
-{% if submissions %}<div class="table-scroll"><table><thead><tr><th>Номер</th><th>Название</th><th>Автор</th><th>Выпуск</th><th>Статус</th><th>Риск</th><th>Обновлено</th></tr></thead><tbody>
-{% for item in submissions %}<tr><td><a href="{% url 'editorial:editor_card' item.submission_id %}"><code>{{ item.submission_id }}</code></a></td><td>{{ item.metadata.title_ru|default:'—' }}</td><td>{{ item.author_contact.full_name|default:'—' }}</td><td>{{ item.issue_id }}</td><td><span class="status">{{ item.status }}</span></td><td>{{ item.overall_risk|default:'нет проверок' }}</td><td>{{ item.updated_at }}</td></tr>{% endfor %}
-</tbody></table></div>{% else %}<p class="empty">Заявок не найдено.</p>{% endif %}
+<section class="app-page">
+  <div class="shell app-layout">
+    {% include 'partials/editor_sidebar.html' %}
+    <div class="app-main">
+      <header class="page-header">
+        <div><span class="eyebrow">Редакторская панель</span><h1>Материалы конференции</h1><p>Проверяйте заявки, анализируйте риски и принимайте финальные решения.</p></div>
+        <a class="button button--ghost" href="{% url 'editorial:issue_list' %}">Управление выпусками</a>
+      </header>
+
+      <div class="dashboard-stats">
+        <article class="dashboard-stat"><div class="dashboard-stat__top"><span class="dashboard-stat__icon">Σ</span><span class="dashboard-stat__trend">Все заявки</span></div><strong>{{ editor_stats.total }}</strong><span>в системе</span></article>
+        <article class="dashboard-stat"><div class="dashboard-stat__top"><span class="dashboard-stat__icon">⌕</span><span class="dashboard-stat__trend">Очередь</span></div><strong>{{ editor_stats.review }}</strong><span>на проверке редактора</span></article>
+        <article class="dashboard-stat"><div class="dashboard-stat__top"><span class="dashboard-stat__icon">↻</span><span class="dashboard-stat__trend">Возврат</span></div><strong>{{ editor_stats.revision }}</strong><span>требуют доработки</span></article>
+        <article class="dashboard-stat"><div class="dashboard-stat__top"><span class="dashboard-stat__icon">✓</span><span class="dashboard-stat__trend">Результат</span></div><strong>{{ editor_stats.accepted }}</strong><span>принято и опубликовано</span></article>
+      </div>
+
+      <section class="card card--flat">
+        <div class="section-title"><div><h2>Фильтры</h2><p class="muted text-small">Сузьте список по выпуску, статусу, риску или текстовому запросу.</p></div></div>
+        <form class="filters" method="get">
+          <label>Выпуск<select name="issue_id"><option value="">Все выпуски</option>{% for issue in issues %}<option value="{{ issue.issue_id }}" {% if filter_issue_id == issue.issue_id %}selected{% endif %}>{{ issue.title }} ({{ issue.year }} Q{{ issue.quarter }})</option>{% endfor %}</select></label>
+          <label>Статус<select name="status"><option value="">Все статусы</option>{% for value,label in statuses %}<option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+          <label>Уровень риска<select name="risk"><option value="">Любой риск</option>{% for value,label in risks %}<option value="{{ value }}" {% if filter_risk == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+          <label>Автор или название<input name="q" value="{{ filter_q }}" placeholder="Поиск по материалам"></label>
+          <div class="filter-actions"><button class="button button--small" type="submit">Применить</button><a class="button button--ghost button--small" href="{% url 'editorial:editor_list' %}">Сбросить</a></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="section-title"><div><h2>Список заявок</h2><p class="muted text-small">Найдено: {{ submissions|length }}</p></div></div>
+        {% if submissions %}
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Материал</th><th>Автор</th><th>Выпуск</th><th>Статус</th><th>Риск</th><th>Обновлено</th><th></th></tr></thead>
+            <tbody>
+            {% for item in submissions %}
+              <tr>
+                <td><a class="table-title" href="{% url 'editorial:editor_card' item.submission_id %}">{{ item.metadata.title_ru|default:'Материал без названия' }}</a><span class="table-subtitle"><code>{{ item.submission_id }}</code></span></td>
+                <td><strong>{{ item.author_contact.full_name|default:'—' }}</strong><br><span class="table-subtitle">{{ item.author_contact.organization|default:'Организация не указана' }}</span></td>
+                <td>{{ item.issue_id }}</td>
+                <td><span class="status status-{{ item.status }}">{{ item.status_label }}</span></td>
+                <td><span class="risk risk-{{ item.overall_risk|default:'none' }}">{{ item.risk_label }}</span></td>
+                <td>{{ item.updated_at_display }}</td>
+                <td><a class="link-arrow" href="{% url 'editorial:editor_card' item.submission_id %}">Открыть</a></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}<div class="empty-state"><div class="empty-state__icon">⌕</div><h3>Заявки не найдены</h3><p>Измените фильтры или сбросьте параметры поиска.</p><a class="button button--ghost" href="{% url 'editorial:editor_list' %}">Сбросить фильтры</a></div>{% endif %}
+      </section>
+    </div>
+  </div>
 </section>
 {% endblock %}

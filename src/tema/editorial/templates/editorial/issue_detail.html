@@ -1,4 +1,44 @@
-{% extends "base.html" %}{% block title %}{{ issue.title }}{% endblock %}{% block content %}
-<section class="card"><p><a href="{% url 'editorial:issue_list' %}">← К выпускам</a></p><div class="section-title"><div><h1>{{ issue.title }}</h1><p><code>{{ issue.issue_id }}</code> · {{ issue.year }} / Q{{ issue.quarter }}{% if issue.published_at %} · {{ issue.published_at }}{% endif %}</p></div><span class="status big">{{ issue.status }}</span></div><form method="post" action="{% url 'editorial:issue_build' issue.issue_id %}">{% csrf_token %}<button class="button" type="submit">Собрать PDF-сборник и архив</button></form>{% if issue.files.collection_pdf %}<p><a href="{% url 'editorial:download_collection' issue.issue_id %}">Скачать сборник</a> · <a href="{% url 'editorial:archive_issue' issue.issue_id %}" target="_blank">Открыть архив</a></p>{% endif %}</section>
-<section class="grid two"><div class="card"><h2>Принятые материалы</h2>{% for item in candidates %}<article class="check"><b>{{ item.metadata.title_ru|default:item.submission_id }}</b><p>{{ item.author_contact.full_name }} · {{ item.metadata.section|default:'Без секции' }}</p><form method="post" action="{% url 'editorial:issue_add_submission' issue.issue_id item.submission_id %}">{% csrf_token %}<button class="button" type="submit">Добавить</button></form></article>{% empty %}<p class="empty">Нет материалов для добавления.</p>{% endfor %}</div><div class="card"><h2>Состав по секциям</h2>{% for section in issue.sections_detailed %}<h3>{{ section.title }}</h3>{% for item in section.submissions %}<article class="check"><b>{{ item.metadata.title_ru|default:item.submission_id }}</b><p>{{ item.author_contact.full_name }}</p>{% if item.status != 'published' %}<form method="post" action="{% url 'editorial:issue_remove_submission' issue.issue_id item.submission_id %}">{% csrf_token %}<button class="button muted-button" type="submit">Исключить</button></form>{% endif %}</article>{% endfor %}{% empty %}<p class="empty">Выпуск пуст.</p>{% endfor %}</div></section>
+{% extends "base.html" %}
+{% block title %}{{ issue.title }}{% endblock %}
+{% block content %}
+<section class="app-page">
+  <div class="shell app-layout">
+    {% include 'partials/editor_sidebar.html' %}
+    <div class="app-main">
+      <a class="breadcrumb" href="{% url 'editorial:issue_list' %}">← Вернуться к выпускам</a>
+      <section class="submission-hero">
+        <div class="submission-hero__top"><div><span class="eyebrow" style="color:#8fb0ff;">{{ issue.issue_id }}</span><h1>{{ issue.title }}</h1><p>{{ issue.year }} · Q{{ issue.quarter }}{% if issue.published_at %} · опубликован {{ issue.published_at }}{% endif %}</p></div><span class="status big {% if issue.status == 'published' %}status--success{% else %}status--neutral{% endif %}">{{ issue.status }}</span></div>
+        <div class="submission-hero__meta"><span>Принято к включению: {{ candidates|length }}</span><span>В составе выпуска: {{ issue.included_count }}</span></div>
+      </section>
+
+      <section class="card card--accent">
+        <div class="section-title"><div><h2>Сборка выпуска</h2><p class="muted text-small">Система сформирует титульную страницу, оглавление, PDF-сборник и публичную страницу архива.</p></div><form method="post" action="{% url 'editorial:issue_build' issue.issue_id %}">{% csrf_token %}<button class="button" type="submit">Собрать PDF и архив</button></form></div>
+        {% if issue.files.collection_pdf %}<div class="split-actions"><a class="button button--ghost button--small" href="{% url 'editorial:download_collection' issue.issue_id %}">Скачать сборник</a><a class="button button--secondary button--small" href="{% url 'editorial:archive_issue' issue.issue_id %}" target="_blank">Открыть публичную страницу</a></div>{% endif %}
+      </section>
+
+      <div class="grid two">
+        <section class="card">
+          <div class="section-title"><div><h2>Принятые материалы</h2><p class="muted text-small">Материалы, которые можно добавить в выпуск.</p></div><span class="muted text-small">{{ candidates|length }}</span></div>
+          <div class="material-list">
+            {% for item in candidates %}
+              <article class="material-card" style="grid-template-columns:1fr;"><div><div class="material-card__meta"><code>{{ item.submission_id }}</code><span>{{ item.metadata.section|default:'Без секции' }}</span></div><h3>{{ item.metadata.title_ru|default:item.submission_id }}</h3><p class="muted text-small">{{ item.author_contact.full_name }}</p><form method="post" action="{% url 'editorial:issue_add_submission' issue.issue_id item.submission_id %}">{% csrf_token %}<button class="button button--small" type="submit">Добавить в выпуск</button></form></div></article>
+            {% empty %}<p class="empty">Нет материалов для добавления.</p>{% endfor %}
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-title"><div><h2>Состав выпуска</h2><p class="muted text-small">Материалы сгруппированы по секциям.</p></div><span class="muted text-small">{{ issue.included_count }}</span></div>
+          {% for section in issue.sections_detailed %}
+            <h3 style="margin-top:20px;">{{ section.title }}</h3>
+            <div class="material-list">
+              {% for item in section.submissions %}
+                <article class="material-card" style="grid-template-columns:1fr;"><div><div class="material-card__meta"><code>{{ item.submission_id }}</code><span class="status status-{{ item.status }}">{{ item.status }}</span></div><h3>{{ item.metadata.title_ru|default:item.submission_id }}</h3><p class="muted text-small">{{ item.author_contact.full_name }}</p>{% if item.status != 'published' %}<form method="post" action="{% url 'editorial:issue_remove_submission' issue.issue_id item.submission_id %}">{% csrf_token %}<button class="button muted-button button--small" type="submit">Исключить</button></form>{% endif %}</div></article>
+              {% endfor %}
+            </div>
+          {% empty %}<p class="empty">Выпуск пока пуст.</p>{% endfor %}
+        </section>
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock %}

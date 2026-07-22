@@ -1,1 +1,54 @@
-{% extends "base.html" %}{% block title %}Архив выпусков{% endblock %}{% block content %}<section class="hero"><h1>Архив конференции</h1><p>Опубликованные выпуски конференции.</p></section><section class="card">{% for issue in issues %}<article class="check"><h2>{{ issue.title }}</h2><p>{{ issue.year }} / Q{{ issue.quarter }} · {{ issue.status }}</p>{% if issue.files.archive_page %}<a href="{% url 'editorial:archive_issue' issue.issue_id %}">Открыть выпуск</a>{% endif %}{% if issue.files.collection_pdf %} · <a href="{% url 'editorial:download_collection' issue.issue_id %}">Скачать PDF</a>{% endif %}</article>{% empty %}<p class="empty">Выпусков пока нет.</p>{% endfor %}</section>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Архив выпусков{% endblock %}
+{% block body_class %}archive-page{% endblock %}
+{% block content %}
+<section class="public-hero archive-hero">
+  <div class="shell archive-hero__content">
+    <span class="archive-hero__kicker">Открытая наука</span>
+    <h1>Архив конференции</h1>
+    <p class="public-hero__lead">Опубликованные выпуски, электронные сборники и отдельные материалы участников конференции.</p>
+    {% if is_author_role %}
+      <a class="button" href="{% url 'conferences' %}">Выбрать конференцию</a>
+    {% elif user.is_authenticated %}
+      <a class="button" href="{% url 'conferences' %}">Посмотреть конференции</a>
+    {% else %}
+      <a class="button" href="{% url 'accounts:register' %}">Стать автором</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section section--white">
+  <div class="shell">
+    <div class="section-title archive-section-title">
+      <div>
+        <span class="section-kicker">Выпуски</span>
+        <h2>Опубликованные сборники</h2>
+        <p class="muted">Доступны для просмотра и скачивания без регистрации.</p>
+      </div>
+      <span class="muted text-small">{{ issues|length }} выпусков</span>
+    </div>
+    {% if issues %}
+      <div class="archive-grid">
+        {% for issue in issues %}
+          <article class="archive-card">
+            <div class="archive-card__meta"><span>{{ issue.year }} · Q{{ issue.quarter }}</span><span class="status status--success">Опубликован</span></div>
+            <h3>{{ issue.title }}</h3>
+            <p class="muted text-small">Включено материалов: {{ issue.included_count }}{% if issue.published_at %}<br>Дата публикации: {{ issue.published_at }}{% endif %}</p>
+            <div class="archive-card__actions">
+              {% if issue.files.archive_page %}<a class="link-arrow" href="{% url 'editorial:archive_issue' issue.issue_id %}">Открыть выпуск</a>{% endif %}
+              {% if issue.files.collection_pdf %}<a href="{% url 'editorial:download_collection' issue.issue_id %}">Скачать PDF</a>{% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon">PDF</div>
+        <h3>Опубликованных выпусков пока нет</h3>
+        <p>После сборки и публикации первого выпуска он появится на этой странице.</p>
+        <a class="button button--ghost" href="{% url 'conferences' %}">Посмотреть конференции</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

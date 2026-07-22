@@ -11,7 +11,7 @@ from .permissions import AUTHORS_GROUP
 @require_http_methods(["GET", "POST"])
 def register(request):
     if request.user.is_authenticated:
-        return redirect("index")
+        return redirect("cabinet_home")
 
     if request.method == "POST":
         form = AuthorRegistrationForm(request.POST)
@@ -21,7 +21,7 @@ def register(request):
             user.groups.add(authors_group)
             login(request, user)
             messages.success(request, "Регистрация завершена. Теперь можно подать материал.")
-            return redirect("index")
+            return redirect("author_dashboard")
     else:
         form = AuthorRegistrationForm()
 

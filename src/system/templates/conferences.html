@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Конференции{% endblock %}
+
+{% block content %}
+<section class="catalog-hero">
+  <div class="shell">
+    <span class="eyebrow">Публичный каталог</span>
+    <h1>Конференции и открытые выпуски</h1>
+    <p>Эта страница доступна всем посетителям и всем ролям. Автор выбирает здесь выпуск для подачи, а редактор и администратор могут просматривать публичную часть сайта.</p>
+  </div>
+</section>
+
+<section class="section section--white">
+  <div class="shell">
+    <div class="section-title catalog-section-title">
+      <div>
+        <span class="section-kicker">Приём материалов</span>
+        <h2>Открытые конференции</h2>
+        <p class="muted">Выберите подходящий выпуск. После этого автор перейдёт к форме подачи материала.</p>
+      </div>
+      <span class="status status--success">{{ open_issues|length }} открыто</span>
+    </div>
+
+    {% if open_issues %}
+      <div class="conference-choice-grid conference-choice-grid--catalog">
+        {% for issue in open_issues %}
+          <article class="conference-choice-card">
+            <div class="conference-choice-card__top">
+              <span class="status status--success">Приём открыт</span>
+              <span class="conference-choice-card__period">{{ issue.year }} · Q{{ issue.quarter }}</span>
+            </div>
+            <p class="conference-choice-card__conference">{{ issue.conference_title }}</p>
+            <h3>{{ issue.title }}</h3>
+            {% if issue.conference_description %}<p>{{ issue.conference_description }}</p>{% else %}<p>Принимаются научные и учебно-исследовательские материалы по тематике искусственного интеллекта.</p>{% endif %}
+            <div class="conference-choice-card__meta">
+              <span>Формат: DOCX</span>
+              <span>{{ issue.submissions_count }} заявок</span>
+            </div>
+
+            {% if is_author_role %}
+              <a class="button" href="{% url 'submit' %}?issue={{ issue.issue_id|urlencode }}">Подать материал →</a>
+            {% elif user.is_authenticated %}
+              <div class="role-hint">
+                <strong>Просмотр конференции</strong>
+                <span>Подача материалов доступна аккаунтам с ролью автора.</span>
+              </div>
+              <a class="button button--ghost" href="{{ cabinet_url }}">Вернуться в кабинет</a>
+            {% else %}
+              <a class="button" href="{% url 'accounts:register' %}">Зарегистрироваться автором →</a>
+              <a class="conference-login-link" href="{% url 'accounts:login' %}?next={% url 'conferences' %}">Уже есть аккаунт</a>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon">CAL</div>
+        <h3>Сейчас нет открытого приёма</h3>
+        <p>Новый выпуск ещё не открыт. Опубликованные конференционные материалы доступны ниже и в архиве.</p>
+        <a class="button button--ghost" href="{% url 'editorial:archive_index' %}">Перейти в архив</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section section--soft">
+  <div class="shell">
+    <div class="section-title catalog-section-title">
+      <div>
+        <span class="section-kicker">Завершённые выпуски</span>
+        <h2>Опубликованные конференции</h2>
+        <p class="muted">Открывайте страницы выпусков и скачивайте сформированные PDF-сборники.</p>
+      </div>
+      <a class="link-arrow" href="{% url 'editorial:archive_index' %}">Весь архив</a>
+    </div>
+
+    {% if all_published_issues %}
+      <div class="archive-grid">
+        {% for issue in all_published_issues %}
+          <article class="archive-card">
+            <div class="archive-card__meta">
+              <span>{{ issue.year }} · Q{{ issue.quarter }}</span>
+              <span class="status status--success">Опубликован</span>
+            </div>
+            <p class="conference-choice-card__conference">{{ issue.conference_title }}</p>
+            <h3>{{ issue.title }}</h3>
+            <p class="muted text-small">Материалов в выпуске: {{ issue.included_count }}</p>
+            <div class="archive-card__actions">
+              {% if issue.files.archive_page %}<a class="link-arrow" href="{% url 'editorial:archive_issue' issue.issue_id %}">Открыть выпуск</a>{% endif %}
+              {% if issue.files.collection_pdf %}<a href="{% url 'editorial:download_collection' issue.issue_id %}">Скачать PDF</a>{% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon">PDF</div>
+        <h3>Опубликованных выпусков пока нет</h3>
+        <p>После первой публикации здесь появятся карточка выпуска и ссылка на электронный сборник.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
