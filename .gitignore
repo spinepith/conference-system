@@ -1345,7 +1345,7 @@ tempCodeRunnerFile.py
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-
+/src/content-validation/win-x64/
 # Streamlit
 .streamlit/secrets.toml
 
@@ -1407,4 +1407,4 @@ desktop.ini
 /storage/logs/*
 /storage/submissions/*
 !/storage/logs/.gitkeep
-!/storage/submissions/.gitkeep
+!/storage/submissions/.gitkeep/src/content-validation/win-x64/

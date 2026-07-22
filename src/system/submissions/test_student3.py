@@ -101,8 +101,18 @@ class StudentThreeIntegrationTests(TestCase):
 
         self.service.save_or_update_file_path(submission_id, "formatted_pdf", str(directory / "formatted_material.pdf"))
         self.service.save_or_update_file_path(submission_id, "result_package", str(directory / "result_package.zip"))
-        self.assertEqual(self.client.get(f"/download/{submission_id}/formatted_pdf/").status_code, 200)
-        self.assertEqual(self.client.get(f"/download/{submission_id}/result_package/").status_code, 200)
+
+        pdf_response = self.client.get(f"/download/{submission_id}/formatted_pdf/")
+        try:
+            self.assertEqual(pdf_response.status_code, 200)
+        finally:
+            pdf_response.close()
+
+        zip_response = self.client.get(f"/download/{submission_id}/result_package/")
+        try:
+            self.assertEqual(zip_response.status_code, 200)
+        finally:
+            zip_response.close()
 
 
     def test_author_page_hides_internal_json_files(self):
@@ -144,6 +154,12 @@ class StudentThreeIntegrationTests(TestCase):
 
         self.assertEqual(result.status, "failed")
         self.assertFalse(old_pdf.exists())
+
+    def test_issue_list_route_is_not_captured_as_submission(self):
+        response = self.client.get("/editor/issues/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "editorial/issue_list.html")
 
     def test_editor_panel_and_decision_history(self):
         submission_id = self.create_submission(status="editor_review")
