@@ -131,3 +131,7 @@ python manage.py create_test_issue
 ```env
 CONTENT_VALIDATION_ENABLED=0
 ```
+
+## Авторизация
+
+В Django-модуле реализовано разделение ролей автора и редактора. Инструкция по миграциям, созданию групп и настройке внутреннего API находится в `src/system/README.md`.

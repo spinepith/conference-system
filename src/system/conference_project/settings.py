@@ -121,6 +121,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "accounts.apps.AccountsConfig",
     "submissions.apps.SubmissionsConfig",
     "tema.editorial.apps.EditorialConfig",
 ]
@@ -148,6 +149,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "accounts.context_processors.role_flags",
             ],
         },
     },
@@ -177,3 +179,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CONFERENCE_DEFAULT_ID = "ai_quarterly_conf"
 ISSUE_DEFAULT_ID = "2026_q1"
 ORGANIZATIONS_SEED_PATH = BASE_DIR / "samples" / "organizations.txt"
+
+
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
+INTERNAL_API_TOKEN = os.getenv("INTERNAL_API_TOKEN", "").strip()
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"

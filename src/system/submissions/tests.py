@@ -7,6 +7,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from docx import Document
@@ -111,7 +113,13 @@ class ConferenceSystemTests(TestCase):
         self.assertTrue(Organization.objects.filter(name="Новая тестовая организация").exists())
 
     def test_api_submissions_list(self):
-        response = Client().get("/api/submissions/")
+        user = get_user_model().objects.create_user(
+            username="api-author", email="api@example.com", password="test-pass-123"
+        )
+        user.groups.add(Group.objects.get_or_create(name="Authors")[0])
+        client = Client()
+        client.force_login(user)
+        response = client.get("/api/submissions/")
         self.assertEqual(response.status_code, 200)
 
     def test_docx_workflow_integrates_with_core(self):

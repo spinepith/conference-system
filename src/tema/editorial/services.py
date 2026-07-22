@@ -91,7 +91,7 @@ def list_included_submissions(issue_id: str) -> list[dict[str, Any]]:
     return [service.get_submission(row.submission_id) for row in rows]
 
 
-def add_submission(issue_id: str, submission_id: str) -> dict[str, Any]:
+def add_submission(issue_id: str, submission_id: str, actor=None) -> dict[str, Any]:
     _get_issue_row(issue_id)
     try:
         submission = Submission.objects.get(pk=submission_id)
@@ -100,12 +100,17 @@ def add_submission(issue_id: str, submission_id: str) -> dict[str, Any]:
     if submission.issue_id != issue_id:
         raise ValueError("Заявка относится к другому выпуску.")
     assert_transition(submission.status, "included_in_issue")
+    changed_by = (actor.get_full_name() or actor.username) if actor else "editor"
     return SubmissionService().update_submission_status(
-        submission_id, "included_in_issue", "Материал включён в выпуск.", "editor"
+        submission_id,
+        "included_in_issue",
+        "Материал включён в выпуск.",
+        changed_by,
+        actor,
     )
 
 
-def remove_submission(issue_id: str, submission_id: str) -> dict[str, Any]:
+def remove_submission(issue_id: str, submission_id: str, actor=None) -> dict[str, Any]:
     _get_issue_row(issue_id)
     try:
         submission = Submission.objects.get(pk=submission_id)
@@ -116,8 +121,13 @@ def remove_submission(issue_id: str, submission_id: str) -> dict[str, Any]:
     if submission.status == "published":
         raise ValueError("Опубликованный материал нельзя исключить без пересборки выпуска.")
     assert_transition(submission.status, "accepted")
+    changed_by = (actor.get_full_name() or actor.username) if actor else "editor"
     return SubmissionService().update_submission_status(
-        submission_id, "accepted", "Материал исключён из выпуска.", "editor"
+        submission_id,
+        "accepted",
+        "Материал исключён из выпуска.",
+        changed_by,
+        actor,
     )
 
 
@@ -147,6 +157,10 @@ def list_issues_summary() -> list[dict[str, Any]]:
     return result
 
 
+def list_published_issues_summary() -> list[dict[str, Any]]:
+    return [row for row in list_issues_summary() if row.get("status") == "published"]
+
+
 def issue_to_dict(issue_id: str) -> dict[str, Any]:
     issue = _get_issue_row(issue_id)
     included = list_included_submissions(issue_id)
@@ -164,7 +178,7 @@ def issue_to_dict(issue_id: str) -> dict[str, Any]:
     return payload
 
 
-def run_pdf_export(submission_id: str) -> dict[str, Any]:
+def run_pdf_export(submission_id: str, actor=None) -> dict[str, Any]:
     service = SubmissionService()
     submission = service.get_submission(submission_id)
     formatted_reference = (submission.get("files") or {}).get("formatted_docx")
@@ -180,7 +194,7 @@ def run_pdf_export(submission_id: str) -> dict[str, Any]:
     for file_type, path in mapping.items():
         if path and Path(path).is_file():
             service.save_or_update_file_path(submission_id, file_type, path)
-    service.add_event(submission_id, "pdf_export_finished", report)
+    service.add_event(submission_id, "pdf_export_finished", report, actor=actor)
     return report
 
 
@@ -220,7 +234,7 @@ def build_issue_collection(issue_id: str) -> dict[str, Any]:
         conference=conference_dict,
         issue=issue_dict,
         submissions=included,
-        material_link_fn=lambda submission_id: f"/download/{submission_id}/formatted_pdf/",
+        material_link_fn=lambda submission_id: f"/archive/materials/{submission_id}.pdf",
         collection_link=collection_link,
     )
     archive_path = save_archive_html(archive_html, issue_dir / ARCHIVE_FILENAME)

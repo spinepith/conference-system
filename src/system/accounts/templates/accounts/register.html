@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Регистрация автора{% endblock %}
+{% block content %}
+<section class="card narrow auth-card">
+  <h1>Регистрация автора</h1>
+  <p class="muted">Редакторские учётные записи создаются администратором.</p>
+  <form method="post" class="form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <label>{{ field.label }}{{ field }}{{ field.errors }}</label>
+    {% endfor %}
+    <button class="button" type="submit">Зарегистрироваться</button>
+  </form>
+  <p>Уже есть аккаунт? <a href="{% url 'accounts:login' %}">Войти</a></p>
+</section>
+{% endblock %}

@@ -41,6 +41,7 @@ urlpatterns = [
         views.download_collection,
         name="download_collection",
     ),
+    path("archive/materials/<str:submission_id>.pdf", views.public_material_pdf, name="public_material_pdf"),
     path("archive/", views.archive_index, name="archive_index"),
     path("archive/<str:issue_id>/", views.archive_issue, name="archive_issue"),
 ]

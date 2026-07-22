@@ -1,47 +1,49 @@
 {% extends 'base.html' %}
 
-{% block title %}Заявки — Conference System MVP{% endblock %}
+{% block title %}Conference System MVP{% endblock %}
 
 {% block content %}
 <section class="hero">
   <h1>Автоматизированная система управления материалами конференции</h1>
-  <p>Модуль на Django: ядро заявок, база данных, статусы, файлы, история действий, workflow и интерфейс автора.</p>
-  <a class="button" href="{% url 'submit' %}">Подать материал</a>
+  <p>Подача материалов, автоматическая обработка, согласование с автором и финальное решение редактора.</p>
+  {% if user.is_authenticated %}
+    <a class="button" href="{% url 'submit' %}">Подать материал</a>
+    {% if is_editor_role %}<a class="button secondary" href="{% url 'editorial:editor_list' %}">Открыть редакторскую панель</a>{% endif %}
+  {% else %}
+    <a class="button" href="{% url 'accounts:register' %}">Зарегистрироваться как автор</a>
+    <a class="button secondary" href="{% url 'accounts:login' %}">Войти</a>
+  {% endif %}
 </section>
 
+{% if user.is_authenticated %}
 <section class="card">
   <div class="section-title">
-    <h2>Список заявок</h2>
+    <h2>Мои материалы</h2>
     <span class="muted">{{ submissions|length }} заявок</span>
   </div>
 
   {% if submissions %}
-  <table>
-    <thead>
-      <tr>
-        <th>Номер</th>
-        <th>Название</th>
-        <th>Автор</th>
-        <th>Организация</th>
-        <th>Статус</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in submissions %}
-      <tr>
-        <td><code>{{ item.submission_id }}</code></td>
-        <td>{{ item.metadata.title_ru|default:'Без названия' }}</td>
-        <td>{{ item.author_contact.full_name|default:'—' }}</td>
-        <td>{{ item.author_contact.organization|default:'—' }}</td>
-        <td><span class="status">{{ item.status }}</span></td>
-        <td><a href="{% url 'status' item.submission_id %}">Открыть</a></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Номер</th><th>Название</th><th>Организация</th><th>Статус</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for item in submissions %}
+        <tr>
+          <td><code>{{ item.submission_id }}</code></td>
+          <td>{{ item.metadata.title_ru|default:'Без названия' }}</td>
+          <td>{{ item.author_contact.organization|default:'—' }}</td>
+          <td><span class="status">{{ item.status_label }}</span></td>
+          <td><a href="{% url 'status' item.submission_id %}">Открыть</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
-    <p class="empty">Заявок пока нет. Создайте первую заявку через форму подачи материала.</p>
+    <p class="empty">У вас пока нет заявок.</p>
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

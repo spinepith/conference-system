@@ -44,6 +44,10 @@
     {% else %}
       <p class="empty">Файлов нет.</p>
     {% endif %}
+    <form method="post" action="{% url 'run_workflow_page' submission.submission_id %}">
+      {% csrf_token %}
+      <button class="button secondary" type="submit">Запустить полный workflow</button>
+    </form>
     <form method="post" action="{% url 'editorial:run_pdf_export' submission.submission_id %}">
       {% csrf_token %}
       <button class="button" type="submit">Пересобрать PDF и ZIP</button>
@@ -54,7 +58,7 @@
     <h2>Решение редактора</h2>
     <form method="post" action="{% url 'editorial:editor_decision' submission.submission_id %}">
       {% csrf_token %}
-      <label>Имя редактора<input name="editor_name" value="editor"></label>
+      <p><b>Решение принимает:</b> {{ user.get_full_name|default:user.username }}</p>
       <label>Комментарий<textarea name="comment" rows="3"></textarea></label>
       <div class="decision-grid">
         <button type="submit" class="button" name="decision" value="accept">Принять</button>

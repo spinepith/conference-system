@@ -53,6 +53,15 @@ def split_csv(value: str) -> list[str]:
     return [part.strip() for part in (value or "").replace(";", ",").split(",") if part.strip()]
 
 
+def _actor_identity(actor, default: str = "system") -> tuple[str, Any | None]:
+    if actor is None:
+        return default, None
+    if isinstance(actor, str):
+        return actor or default, None
+    name = actor.get_full_name() or actor.username
+    return name, actor
+
+
 def load_seed_organizations() -> list[str]:
     path = Path(settings.ORGANIZATIONS_SEED_PATH)
     if not path.exists():
@@ -162,7 +171,12 @@ class SubmissionService:
         return f"SUB-{issue_part}-{count:05d}"
 
     @transaction.atomic
-    def create_submission(self, data: dict[str, Any], uploaded_file: UploadedFile | None = None) -> dict[str, Any]:
+    def create_submission(
+        self,
+        data: dict[str, Any],
+        uploaded_file: UploadedFile | None = None,
+        owner=None,
+    ) -> dict[str, Any]:
         self.ensure_defaults()
         conference_id = data.get("conference_id") or settings.CONFERENCE_DEFAULT_ID
         issue_id = data.get("issue_id") or settings.ISSUE_DEFAULT_ID
@@ -176,6 +190,7 @@ class SubmissionService:
 
         submission = Submission.objects.create(
             submission_id=submission_id,
+            owner=owner,
             conference=conference,
             issue=issue,
             status="uploaded",
@@ -223,16 +238,24 @@ class SubmissionService:
             submission=submission,
             from_status="",
             to_status="uploaded",
-            changed_by="system",
+            changed_by=(owner.get_full_name() or owner.username) if owner else "system",
+            changed_by_user=owner,
             comment="Заявка создана, файл загружен." if uploaded_file else "Заявка создана.",
         )
-        EventLog.objects.create(submission=submission, event_type="submission_created", payload={"source": "django"})
+        EventLog.objects.create(
+            submission=submission,
+            event_type="submission_created",
+            payload={"source": "django"},
+            actor=owner,
+        )
 
         if uploaded_file is not None:
-            self.save_uploaded_file(submission, "original_docx", uploaded_file)
+            self.save_uploaded_file(submission, "original_docx", uploaded_file, actor=owner)
         return self.get_submission(submission_id)
 
-    def create_submission_from_form(self, cleaned: dict[str, Any], uploaded_file: UploadedFile) -> dict[str, Any]:
+    def create_submission_from_form(
+        self, cleaned: dict[str, Any], uploaded_file: UploadedFile, owner=None
+    ) -> dict[str, Any]:
         organization = clean_organization_name(cleaned.get("organization") or "")
         authors = cleaned.get("authors_json") or []
         data = {
@@ -253,10 +276,10 @@ class SubmissionService:
                 "abstract_ru": cleaned.get("abstract_ru", ""),
             },
         }
-        return self.create_submission(data, uploaded_file=uploaded_file)
+        return self.create_submission(data, uploaded_file=uploaded_file, owner=owner)
 
     def get_submission_model(self, submission_id: str) -> Submission:
-        return Submission.objects.prefetch_related(
+        return Submission.objects.select_related("owner").prefetch_related(
             "authors",
             "files",
             "checks",
@@ -269,12 +292,21 @@ class SubmissionService:
     def get_submission(self, submission_id: str) -> dict[str, Any]:
         return self.to_dict(self.get_submission_model(submission_id))
 
-    def list_submissions(self, issue_id: str | None = None) -> list[dict[str, Any]]:
+    def list_submissions(
+        self,
+        issue_id: str | None = None,
+        *,
+        owner=None,
+        audience: str = "editor",
+    ) -> list[dict[str, Any]]:
         self.ensure_defaults()
-        qs = Submission.objects.prefetch_related("files", "checks")
+        qs = Submission.objects.select_related("owner").prefetch_related("authors", "files", "checks")
         if issue_id:
             qs = qs.filter(issue_id=issue_id)
-        return [self.to_dict(row, compact=True) for row in qs]
+        if owner is not None:
+            qs = qs.filter(owner=owner)
+        serializer = self.to_author_dict if audience == "author" else self.to_dict
+        return [serializer(row, compact=True) for row in qs]
 
     @transaction.atomic
     def update_submission_status(
@@ -283,6 +315,7 @@ class SubmissionService:
         status: str,
         comment: str = "",
         changed_by: str = "system",
+        changed_by_user=None,
     ) -> dict[str, Any]:
         submission = Submission.objects.select_for_update().get(pk=submission_id)
         from_status = submission.status
@@ -296,12 +329,14 @@ class SubmissionService:
             from_status=from_status,
             to_status=status,
             changed_by=changed_by,
+            changed_by_user=changed_by_user,
             comment=comment,
         )
         EventLog.objects.create(
             submission=submission,
             event_type="status_changed",
             payload={"from_status": from_status, "to_status": status, "comment": comment},
+            actor=changed_by_user,
         )
         return self.get_submission(submission_id)
 
@@ -399,11 +434,21 @@ class SubmissionService:
             payload={**check_result, "replaced_existing": replace_existing},
         )
 
-    def add_event(self, submission_id: str, event_type: str, payload: dict[str, Any] | None = None) -> None:
+    def add_event(
+        self,
+        submission_id: str,
+        event_type: str,
+        payload: dict[str, Any] | None = None,
+        actor=None,
+    ) -> None:
         submission = Submission.objects.get(pk=submission_id)
-        EventLog.objects.create(submission=submission, event_type=event_type, payload=payload or {})
+        EventLog.objects.create(
+            submission=submission, event_type=event_type, payload=payload or {}, actor=actor
+        )
 
-    def save_uploaded_file(self, submission: Submission, file_type: str, uploaded_file: UploadedFile) -> SubmissionFile:
+    def save_uploaded_file(
+        self, submission: Submission, file_type: str, uploaded_file: UploadedFile, actor=None
+    ) -> SubmissionFile:
         destination_dir = Path(settings.SUBMISSIONS_STORAGE_DIR) / submission.submission_id
         destination_dir.mkdir(parents=True, exist_ok=True)
         safe_name = Path(uploaded_file.name or "uploaded.docx").name
@@ -421,6 +466,7 @@ class SubmissionService:
             submission=submission,
             event_type="file_saved",
             payload={"file_type": file_type, "path": relative_path},
+            actor=actor,
         )
         return file_row
 
@@ -450,11 +496,19 @@ class SubmissionService:
         row = SubmissionFile.objects.filter(submission_id=submission_id, file_type=file_type).order_by("-uploaded_at", "-id").first()
         return row.path if row else ""
 
-    def save_editor_decision(self, submission_id: str, decision: str, editor_name: str = "editor", comment: str = "") -> dict[str, Any]:
+    def save_editor_decision(
+        self,
+        submission_id: str,
+        decision: str,
+        editor=None,
+        comment: str = "",
+    ) -> dict[str, Any]:
         submission = Submission.objects.get(pk=submission_id)
+        editor_name, editor_user = _actor_identity(editor, "editor")
         row = EditorDecision.objects.create(
             submission=submission,
             decision=decision,
+            editor=editor_user,
             editor_name=editor_name,
             comment=comment,
         )
@@ -462,6 +516,7 @@ class SubmissionService:
             submission=submission,
             event_type="editor_decision_saved",
             payload={"decision": decision, "editor_name": editor_name, "comment": comment},
+            actor=editor_user,
         )
         return {
             "id": row.id,
@@ -475,17 +530,10 @@ class SubmissionService:
         self,
         submission_id: str,
         decision: str,
-        editor_name: str = "editor",
+        editor=None,
         comment: str = "",
     ) -> dict[str, Any]:
-        """Atomically save a human editor decision and its resulting status.
-
-        Generic workflow transitions are intentionally strict. An editor, however,
-        must be able to correct or replace an earlier human decision (for example,
-        change ``needs_revision`` to ``accepted``) without manually rebuilding an
-        intermediate status chain. Published and issue-included materials keep
-        their stronger safeguards.
-        """
+        """Сохраняет решение редактора и соответствующий ему статус."""
         target_status = EDITOR_DECISION_TO_STATUS.get(decision)
         if not target_status:
             raise ValueError("Неизвестное решение редактора.")
@@ -497,6 +545,7 @@ class SubmissionService:
         if from_status == "included_in_issue":
             raise ValueError("Сначала исключите материал из выпуска.")
 
+        editor_name, editor_user = _actor_identity(editor, "editor")
         if from_status != target_status:
             submission.status = target_status
             submission.save(update_fields=["status", "updated_at"])
@@ -505,6 +554,7 @@ class SubmissionService:
                 from_status=from_status,
                 to_status=target_status,
                 changed_by=editor_name,
+                changed_by_user=editor_user,
                 comment=comment,
             )
             EventLog.objects.create(
@@ -516,11 +566,13 @@ class SubmissionService:
                     "comment": comment,
                     "source": "editor_decision",
                 },
+                actor=editor_user,
             )
 
         row = EditorDecision.objects.create(
             submission=submission,
             decision=decision,
+            editor=editor_user,
             editor_name=editor_name,
             comment=comment,
         )
@@ -533,6 +585,7 @@ class SubmissionService:
                 "comment": comment,
                 "status": target_status,
             },
+            actor=editor_user,
         )
         return {
             "id": row.id,
@@ -557,6 +610,10 @@ class SubmissionService:
     def to_dict(self, submission: Submission, compact: bool = False) -> dict[str, Any]:
         data = {
             "submission_id": submission.submission_id,
+            "owner": {
+                "id": submission.owner_id,
+                "username": submission.owner.username if submission.owner else None,
+            },
             "conference_id": submission.conference_id,
             "issue_id": submission.issue_id,
             "status": submission.status,
@@ -601,6 +658,7 @@ class SubmissionService:
                         "from_status": row.from_status,
                         "to_status": row.to_status,
                         "changed_by": row.changed_by,
+                        "changed_by_user_id": row.changed_by_user_id,
                         "changed_at": _local_iso(row.changed_at),
                         "comment": row.comment,
                     }
@@ -619,7 +677,12 @@ class SubmissionService:
                     for row in submission.workflow_results.all()
                 ],
                 "events": [
-                    {"event_type": row.event_type, "payload": row.payload, "created_at": _local_iso(row.created_at)}
+                    {
+                        "event_type": row.event_type,
+                        "payload": row.payload,
+                        "actor_id": row.actor_id,
+                        "created_at": _local_iso(row.created_at),
+                    }
                     for row in submission.events.all()
                 ],
             }
@@ -629,9 +692,105 @@ class SubmissionService:
             data["editor_decision"] = {
                 "decision": last_decision.decision,
                 "editor_name": last_decision.editor_name,
+                "editor_id": last_decision.editor_id,
                 "comment": last_decision.comment,
                 "created_at": _local_iso(last_decision.created_at),
             }
+        return data
+
+
+    def to_author_dict(self, submission: Submission, compact: bool = False) -> dict[str, Any]:
+        visible_file_types = {
+            "original_docx",
+            "revision_docx",
+            "formatted_docx",
+            "formatted_pdf",
+            "result_package",
+        }
+        files = {
+            file_type: path
+            for file_type, path in self._latest_files(submission).items()
+            if file_type in visible_file_types
+        }
+        raw_metadata = dict(submission.metadata or {})
+        metadata = {
+            key: raw_metadata.get(key)
+            for key in (
+                "title_ru",
+                "title_en",
+                "authors",
+                "supervisor",
+                "section",
+                "keywords_ru",
+                "keywords_en",
+                "abstract_ru",
+                "abstract_en",
+            )
+            if key in raw_metadata
+        }
+        extracted = raw_metadata.get("extracted_metadata")
+        if isinstance(extracted, dict):
+            objects = extracted.get("objects") if isinstance(extracted.get("objects"), dict) else {}
+            metadata["extracted_metadata"] = {
+                "title": extracted.get("title"),
+                "organization": extracted.get("organization"),
+                "authors": extracted.get("authors") or [],
+                "abstract": extracted.get("abstract"),
+                "keywords": extracted.get("keywords") or [],
+                "sections": [
+                    {"title": item.get("title", "")}
+                    for item in (extracted.get("sections") or [])
+                    if isinstance(item, dict)
+                ],
+                "objects": {
+                    "tables_count": objects.get("tables_count", 0),
+                    "figures_count": objects.get("figures_count", 0),
+                    "equations_count": objects.get("equations_count", 0),
+                },
+                "warnings": extracted.get("warnings") or [],
+            }
+
+        data = {
+            "submission_id": submission.submission_id,
+            "conference_id": submission.conference_id,
+            "issue_id": submission.issue_id,
+            "status": submission.status,
+            "created_at": _local_iso(submission.created_at),
+            "updated_at": _local_iso(submission.updated_at),
+            "author_contact": submission.author_contact,
+            "metadata": metadata,
+            "authors": [
+                {
+                    "full_name": row.full_name,
+                    "organization": row.organization.name if row.organization else "",
+                }
+                for row in submission.authors.all()
+            ],
+            "files": files,
+            "checks": [
+                {
+                    "check_id": row.check_id,
+                    "title": row.title,
+                    "status": row.status,
+                    "risk_level": row.risk_level,
+                    "summary": row.summary,
+                    "warnings": row.warnings,
+                    "author_comment": row.author_comment,
+                }
+                for row in submission.checks.all()
+            ],
+        }
+        if compact:
+            return data
+        data["status_history"] = [
+            {
+                "from_status": row.from_status,
+                "to_status": row.to_status,
+                "changed_at": _local_iso(row.changed_at),
+                "comment": row.comment,
+            }
+            for row in submission.status_history.all()
+        ]
         return data
 
 

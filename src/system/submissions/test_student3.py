@@ -7,6 +7,8 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from reportlab.pdfgen import canvas
@@ -32,6 +34,11 @@ class StudentThreeIntegrationTests(TestCase):
         self.service = SubmissionService()
         self.service.ensure_defaults()
         self.client = Client()
+        self.editor = get_user_model().objects.create_user(
+            username="editor", first_name="Редактор", password="test-pass-123", is_staff=True
+        )
+        self.editor.groups.add(Group.objects.get_or_create(name="Editors")[0])
+        self.client.force_login(self.editor)
 
     def tearDown(self):
         self.override.disable()
@@ -167,11 +174,13 @@ class StudentThreeIntegrationTests(TestCase):
         self.assertEqual(self.client.get(f"/editor/{submission_id}/").status_code, 200)
         response = self.client.post(
             f"/editor/{submission_id}/decision/",
-            {"decision": "accept", "editor_name": "Редактор", "comment": "Принято"},
+            {"decision": "accept", "editor_name": "Подложное имя", "comment": "Принято"},
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Submission.objects.get(pk=submission_id).status, "accepted")
-        self.assertTrue(EditorDecision.objects.filter(submission_id=submission_id, decision="accept").exists())
+        decision = EditorDecision.objects.get(submission_id=submission_id, decision="accept")
+        self.assertEqual(decision.editor, self.editor)
+        self.assertEqual(decision.editor_name, "Редактор")
         self.assertTrue(StatusHistory.objects.filter(submission_id=submission_id, to_status="accepted").exists())
 
     def test_editor_can_replace_previous_decision(self):
@@ -185,7 +194,7 @@ class StudentThreeIntegrationTests(TestCase):
         for decision, expected_status in decisions:
             response = self.client.post(
                 f"/editor/{submission_id}/decision/",
-                {"decision": decision, "editor_name": "Редактор", "comment": decision},
+                {"decision": decision, "editor_name": "Подложное имя", "comment": decision},
             )
             self.assertEqual(response.status_code, 302)
             self.assertEqual(Submission.objects.get(pk=submission_id).status, expected_status)

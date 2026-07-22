@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import models
 
 
@@ -44,6 +45,13 @@ class Organization(models.Model):
 
 class Submission(models.Model):
     submission_id = models.CharField(max_length=40, primary_key=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="owned_submissions",
+        null=True,
+        blank=True,
+    )
     conference = models.ForeignKey(Conference, on_delete=models.PROTECT, related_name="submissions")
     issue = models.ForeignKey(Issue, on_delete=models.PROTECT, related_name="submissions")
     authors = models.ManyToManyField("Author", through="SubmissionAuthor", related_name="submissions")
@@ -154,6 +162,13 @@ class StatusHistory(models.Model):
     from_status = models.CharField(max_length=40, blank=True)
     to_status = models.CharField(max_length=40)
     changed_by = models.CharField(max_length=120, default="system")
+    changed_by_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="submission_status_changes",
+    )
     changed_at = models.DateTimeField(auto_now_add=True)
     comment = models.TextField(blank=True)
 
@@ -168,6 +183,13 @@ class EditorDecision(models.Model):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="editor_decisions")
     decision = models.CharField(max_length=40)
     editor_name = models.CharField(max_length=160, default="editor")
+    editor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="editor_decisions",
+    )
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -182,6 +204,13 @@ class EventLog(models.Model):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="events")
     event_type = models.CharField(max_length=120)
     payload = models.JSONField(default=dict, blank=True)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="submission_events",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

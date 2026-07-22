@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<section class="card narrow auth-card">
+  <h1>Вход</h1>
+  <form method="post" class="form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <label>{{ field.label }}{{ field }}{{ field.errors }}</label>
+    {% endfor %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <button class="button" type="submit">Войти</button>
+  </form>
+  <p>Нет аккаунта автора? <a href="{% url 'accounts:register' %}">Зарегистрироваться</a></p>
+</section>
+{% endblock %}
