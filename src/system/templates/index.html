@@ -6,16 +6,30 @@
 <section class="hero">
   <h1>Автоматизированная система управления материалами конференции</h1>
   <p>Подача материалов, автоматическая обработка, согласование с автором и финальное решение редактора.</p>
+
   {% if user.is_authenticated %}
-    <a class="button" href="{% url 'submit' %}">Подать материал</a>
-    {% if is_editor_role %}<a class="button secondary" href="{% url 'editorial:editor_list' %}">Открыть редакторскую панель</a>{% endif %}
+
+    {% if is_editor_role %}
+      <a class="button secondary" href="{% url 'editorial:editor_list' %}">
+        Открыть редакторскую панель
+      </a>
+    {% else %}
+      <a class="button" href="{% url 'submit' %}">
+        Подать материал
+      </a>
+    {% endif %}
+
   {% else %}
-    <a class="button" href="{% url 'accounts:register' %}">Зарегистрироваться как автор</a>
-    <a class="button secondary" href="{% url 'accounts:login' %}">Войти</a>
+    <a class="button" href="{% url 'accounts:register' %}">
+      Зарегистрироваться как автор
+    </a>
+    <a class="button secondary" href="{% url 'accounts:login' %}">
+      Войти
+    </a>
   {% endif %}
 </section>
 
-{% if user.is_authenticated %}
+{% if user.is_authenticated and not is_editor_role %}
 <section class="card">
   <div class="section-title">
     <h2>Мои материалы</h2>
@@ -26,7 +40,13 @@
   <div class="table-scroll">
     <table>
       <thead>
-        <tr><th>Номер</th><th>Название</th><th>Организация</th><th>Статус</th><th></th></tr>
+        <tr>
+          <th>Номер</th>
+          <th>Название</th>
+          <th>Организация</th>
+          <th>Статус</th>
+          <th></th>
+        </tr>
       </thead>
       <tbody>
         {% for item in submissions %}
@@ -46,4 +66,5 @@
   {% endif %}
 </section>
 {% endif %}
+
 {% endblock %}

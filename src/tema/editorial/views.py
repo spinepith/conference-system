@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 from accounts.permissions import editor_required, is_editor
 from submissions.models import Submission
 from submissions.services import SubmissionService, resolve_stored_file_path
-from submissions.status_machine import VALID_STATUSES
+from submissions.status_machine import VALID_STATUSES, ALLOWED_TRANSITIONS
 
 from . import services as issue_service
 
@@ -119,7 +119,10 @@ def editor_card(request: HttpRequest, submission_id: str):
         submission = _with_display_times(_with_summary(_service().get_submission(submission_id)))
     except ObjectDoesNotExist as exc:
         raise Http404("Заявка не найдена") from exc
-    return render(request, "editorial/editor_card.html", {"submission": submission})
+    return render(request, "editorial/editor_card.html", {
+        "submission": submission,
+        "available_decisions": _available_decisions(submission["status"]),
+    })
 
 
 @editor_required
@@ -130,6 +133,12 @@ def editor_decision(request: HttpRequest, submission_id: str):
     svc = _service()
     try:
         submission = svc.get_submission_model(submission_id)
+        available = _available_decisions(submission.status)
+        if not available.get(decision):
+            raise ValueError(
+                f"Действие «{DECISION_LABELS.get(decision, decision)}» недоступно "
+                f"для текущего статуса заявки «{submission.status}»."
+            )
         if decision == "include_in_issue":
             issue_service.add_submission(submission.issue_id, submission_id, actor=request.user)
         elif decision == "exclude_from_issue":
@@ -308,3 +317,15 @@ def archive_issue(request: HttpRequest, issue_id: str):
     if not path.is_file():
         raise Http404("Страница архива отсутствует.")
     return HttpResponse(path.read_text(encoding="utf-8"), content_type="text/html; charset=utf-8")
+
+
+def _available_decisions(status: str) -> dict[str, bool]:
+    allowed_next = ALLOWED_TRANSITIONS.get(status, set())
+    return {
+        "accept": "accepted" in allowed_next,
+        "reject": "rejected" in allowed_next,
+        "revision": "needs_revision" in allowed_next,
+        "return_to_author": "needs_author_review" in allowed_next,
+        "include_in_issue": status == "accepted",
+        "exclude_from_issue": status == "included_in_issue",
+    }

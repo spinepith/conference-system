@@ -119,6 +119,9 @@ def index(request: HttpRequest):
 @login_required
 @require_http_methods(["GET", "POST"])
 def submit_material(request: HttpRequest):
+    if is_editor(request.user):
+        messages.error(request, "Редактор и администратор не могут подавать материалы.")
+        return redirect("index")
     svc = service()
     svc.ensure_defaults()
     initial = {

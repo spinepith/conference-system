@@ -59,15 +59,34 @@
     <form method="post" action="{% url 'editorial:editor_decision' submission.submission_id %}">
       {% csrf_token %}
       <p><b>Решение принимает:</b> {{ user.get_full_name|default:user.username }}</p>
+      <p class="muted">Текущий статус: <b>{{ submission.status }}</b> — активны только те кнопки, переход по которым сейчас разрешён.</p>
       <label>Комментарий<textarea name="comment" rows="3"></textarea></label>
       <div class="decision-grid">
-        <button type="submit" class="button" name="decision" value="accept">Принять</button>
-        <button type="submit" class="button danger" name="decision" value="reject">Отклонить</button>
-        <button type="submit" class="button secondary" name="decision" value="revision">На доработку</button>
-        <button type="submit" class="button secondary" name="decision" value="return_to_author">Автору на согласование</button>
-        <button type="submit" class="button" name="decision" value="include_in_issue">Включить в выпуск</button>
-        <button type="submit" class="button muted-button" name="decision" value="exclude_from_issue">Исключить из выпуска</button>
+        <button type="submit" class="button" name="decision" value="accept" {% if not available_decisions.accept %}disabled{% endif %}>Принять</button>
+        <button type="submit" class="button danger" name="decision" value="reject" {% if not available_decisions.reject %}disabled{% endif %}>Отклонить</button>
+        <button type="submit" class="button secondary" name="decision" value="revision" {% if not available_decisions.revision %}disabled{% endif %}>На доработку</button>
+        <button type="submit" class="button secondary" name="decision" value="return_to_author" {% if not available_decisions.return_to_author %}disabled{% endif %}>Автору на согласование</button>
+        {% if available_decisions.include_in_issue %}
+<button type="submit"
+        class="button"
+        name="decision"
+        value="include_in_issue">
+    Включить в выпуск
+</button>
+{% endif %}
+
+{% if available_decisions.exclude_from_issue %}
+<button type="submit"
+        class="button muted-button"
+        name="decision"
+        value="exclude_from_issue">
+    Исключить из выпуска
+</button>
+{% endif %}
       </div>
+      {% if not available_decisions.include_in_issue and not available_decisions.exclude_from_issue %}
+        <p class="muted">Работа с выпуском станет доступна после того, как материал будет принят редактором (статус «accepted»).</p>
+      {% endif %}
     </form>
     {% if submission.editor_decision %}
       <p>
