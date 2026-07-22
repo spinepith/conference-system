@@ -114,26 +114,23 @@ def index(request: HttpRequest):
         for row in submissions:
             row["status_label"] = STATUS_LABELS.get(row["status"], row["status"])
 
-    # Get current active conference/issue
-    current_issue = None
+    # Get available issues (not published)
+    available_issues = []
     try:
-        from tema.editorial.models import Issue
-        from django.db.models import Count
-        # Get the most recent issue that is not closed
-        current_issue = Issue.objects.filter(
-            status__in=['open', 'active', 'draft']
-        ).order_by('-year', '-quarter').first()
+        from submissions.models import Issue
+        available_issues = Issue.objects.exclude(
+            extras__status="published"
+        ).select_related("extras").order_by("-year", "-quarter")
 
-        if current_issue:
-            # Count submissions for this issue
-            submissions_count = Submission.objects.filter(issue_id=current_issue.issue_id).count()
-            current_issue.submissions_count = submissions_count
+        # Count submissions for each issue
+        for issue in available_issues:
+            issue.submissions_count = Submission.objects.filter(issue_id=issue.issue_id).count()
     except Exception:
         pass
 
     return render(request, "index.html", {
         "submissions": submissions,
-        "current_issue": current_issue,
+        "available_issues": available_issues,
     })
 
 
@@ -146,16 +143,14 @@ def submit_material(request: HttpRequest):
     svc = service()
     svc.ensure_defaults()
 
-    # Получаем список активных выпусков
+    # Получаем список активных выпусков (не опубликованные)
     from submissions.models import Issue
-    active_issues = Issue.objects.filter(
-        extras__status__in=["draft", "open"]
+    active_issues = Issue.objects.exclude(
+        extras__status="published"
     ).select_related("extras").order_by("-year", "-quarter")
 
-    # Если выпусков больше 2, показываем выбор
-    issue_choices = None
-    if active_issues.count() > 2:
-        issue_choices = [(issue.issue_id, f"{issue.title} ({issue.year} Q{issue.quarter})") for issue in active_issues]
+    # Всегда показываем выбор выпуска
+    issue_choices = [(issue.issue_id, f"{issue.title} ({issue.year} Q{issue.quarter})") for issue in active_issues]
 
     initial = {
         "full_name": _display_name(request.user),
@@ -177,7 +172,7 @@ def submit_material(request: HttpRequest):
     else:
         form = SubmissionForm(initial=initial, issue_choices=issue_choices)
 
-    return render(request, "submit.html", {"form": form, "show_issue_choice": issue_choices is not None})
+    return render(request, "submit.html", {"form": form})
 
 
 @login_required

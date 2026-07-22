@@ -17,7 +17,39 @@
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 11px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
 .form label { display: block; font-weight: 700; margin: 14px 0; }
-input, textarea, select { display: block; width: 100%; margin-top: 7px; padding: 11px; border: 1px solid #d1d5db; border-radius: 9999px; font: inherit; background: white; }
+input, textarea, select {
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+  padding: 11px;
+  border: 1px solid #d1d5db;
+  border-radius: 9999px;
+  font: inherit;
+  background: transparent !important;
+  color: white !important;
+  caret-color: white;
+}
+input::placeholder, textarea::placeholder, select::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  font-family: inherit !important;
+}
+select option {
+  background: #000;
+  color: white;
+}
 textarea { resize: vertical; }
 .error, .errorlist { background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 9999px; margin: 8px 0; list-style: none; }
 .autocomplete { position: relative; }

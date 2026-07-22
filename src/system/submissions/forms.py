@@ -12,18 +12,18 @@ class SubmissionForm(forms.Form):
     supervisor = forms.CharField(label="Научный руководитель", max_length=255, required=False)
     abstract_ru = forms.CharField(label="Аннотация", required=False, widget=forms.Textarea(attrs={"rows": 4}))
     keywords_ru = forms.CharField(label="Ключевые слова", required=False)
-    issue_id = forms.ChoiceField(label="Выпуск", required=False)
+    issue_id = forms.ChoiceField(label="Выпуск", required=True)
     docx_file = forms.FileField(label="Файл DOCX")
 
     def __init__(self, *args, **kwargs):
-        issue_choices = kwargs.pop('issue_choices', None)
+        issue_choices = kwargs.pop('issue_choices', [])
         super().__init__(*args, **kwargs)
         if issue_choices:
             self.fields['issue_id'].choices = issue_choices
-            self.fields['issue_id'].required = True
         else:
-            # Если выбора нет, скрываем поле
+            # Если вообще нет выпусков, делаем поле невидимым
             self.fields['issue_id'].widget = forms.HiddenInput()
+            self.fields['issue_id'].required = False
 
     def clean_docx_file(self):
         file = self.cleaned_data["docx_file"]

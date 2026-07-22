@@ -110,7 +110,6 @@
             {% endif %}
           </div>
 
-          {% if show_issue_choice %}
           <!-- Issue Selection -->
           <div class="form-group">
             <label class="block text-white font-medium mb-2">
@@ -123,9 +122,6 @@
               <div class="mt-2 text-red-300 text-sm">{{ form.issue_id.errors }}</div>
             {% endif %}
           </div>
-          {% else %}
-            {{ form.issue_id }}
-          {% endif %}
         </div>
 
         <div class="h-px bg-white/10"></div>
