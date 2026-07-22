@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+import secrets
+
 from django.conf import settings
 from django.db import models
+
+
+def generate_access_token() -> str:
+    """Return a URL-safe token for accessing a submission."""
+    return secrets.token_urlsafe(32)
 
 
 class Conference(models.Model):
@@ -45,6 +52,11 @@ class Organization(models.Model):
 
 class Submission(models.Model):
     submission_id = models.CharField(max_length=40, primary_key=True)
+    access_token = models.CharField(
+        max_length=64,
+        default=generate_access_token,
+        editable=False,
+    )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

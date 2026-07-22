@@ -410,23 +410,26 @@ class SubmissionService:
         replace_existing: bool = False,
     ) -> None:
         submission = Submission.objects.select_for_update().get(pk=submission_id)
-        check_id = check_result.get("check_id", "unknown_check")
+        # ContentValidation may serialize optional fields as explicit JSON null.
+        # ``dict.get(key, default)`` does not use the default when the key exists
+        # with a None value, while the corresponding database columns are NOT NULL.
+        check_id = str(check_result.get("check_id") or "unknown_check")
         if replace_existing:
             CheckResult.objects.filter(submission=submission, check_id=check_id).delete()
         CheckResult.objects.create(
             submission=submission,
             check_id=check_id,
-            title=check_result.get("title", ""),
-            status=check_result.get("status", "completed"),
-            risk_level=check_result.get("risk_level", "low"),
+            title=check_result.get("title") or "",
+            status=check_result.get("status") or "completed",
+            risk_level=check_result.get("risk_level") or "low",
             score=check_result.get("score"),
-            summary=check_result.get("summary", ""),
-            warnings=check_result.get("warnings", []),
-            errors=check_result.get("errors", []),
-            flagged_fragments=check_result.get("flagged_fragments", []),
-            author_comment=check_result.get("author_comment", ""),
-            editor_comment=check_result.get("editor_comment", ""),
-            raw_model_response_path=check_result.get("raw_model_response_path", ""),
+            summary=check_result.get("summary") or "",
+            warnings=check_result.get("warnings") or [],
+            errors=check_result.get("errors") or [],
+            flagged_fragments=check_result.get("flagged_fragments") or [],
+            author_comment=check_result.get("author_comment") or "",
+            editor_comment=check_result.get("editor_comment") or "",
+            raw_model_response_path=check_result.get("raw_model_response_path") or "",
         )
         EventLog.objects.create(
             submission=submission,
