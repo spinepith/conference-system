@@ -4,53 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<<<<<<< HEAD
   <title>{% block title %}Conference System MVP{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'styles.css' %}">
-</head>
-<body>
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <a class="brand" href="{% url 'index' %}">Conference System MVP</a>
-      <nav class="main-nav">
-        <a href="{% url 'editorial:archive_index' %}">Архив</a>
-
-        {% if user.is_authenticated %}
-
-            {% if not is_editor_role %}
-                <a href="{% url 'index' %}">Мои материалы</a>
-                <a href="{% url 'submit' %}">Подать материал</a>
-            {% endif %}
-
-            {% if is_editor_role %}
-                <a href="{% url 'editorial:editor_list' %}">Редактор</a>
-                <a href="{% url 'editorial:issue_list' %}">Выпуски</a>
-                <a href="{% url 'api_index' %}">API</a>
-            {% endif %}
-
-            {% if user.is_staff %}
-                <a href="/admin/">Админка</a>
-            {% endif %}
-
-            <span class="nav-user">{{ user.get_full_name|default:user.username }}</span>
-
-            <form method="post" action="{% url 'accounts:logout' %}" class="nav-form">
-                {% csrf_token %}
-                <button type="submit" class="nav-button">Выйти</button>
-            </form>
-
-        {% else %}
-
-            <a href="{% url 'accounts:login' %}">Войти</a>
-            <a href="{% url 'accounts:register' %}">Регистрация</a>
-
-        {% endif %}
-    </nav>
-    </div>
-  </header>
-=======
-  <title>{% block title %}Conference System{% endblock %}</title>
->>>>>>> 17c3267 (redesign)
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,6 +13,9 @@
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom styles AFTER Tailwind -->
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
 
   <script>
     tailwind.config = {
@@ -135,13 +92,13 @@
 
     /* Liquid Glass Effect */
     .glass {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       box-shadow:
         0 8px 32px 0 rgba(31, 38, 135, 0.15),
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
-        inset 0 -1px 0 0 rgba(255, 255, 255, 0.1);
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04);
       position: relative;
     }
 
@@ -154,7 +111,7 @@
       bottom: 0;
       border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -162,13 +119,13 @@
     }
 
     .glass-strong {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
       backdrop-filter: blur(30px) saturate(200%);
       -webkit-backdrop-filter: blur(30px) saturate(200%);
       box-shadow:
-        0 8px 32px 0 rgba(31, 38, 135, 0.2),
-        inset 0 2px 0 0 rgba(255, 255, 255, 0.25),
-        inset 0 -2px 0 0 rgba(255, 255, 255, 0.15);
+        0 8px 32px 0 rgba(0, 0, 0, 0.1),
+        inset 0 2px 0 0 rgba(255, 255, 255, 0.1),
+        inset 0 -2px 0 0 rgba(255, 255, 255, 0.05);
       position: relative;
     }
 
@@ -181,7 +138,7 @@
       bottom: 0;
       border-radius: inherit;
       padding: 1.5px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15));
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;

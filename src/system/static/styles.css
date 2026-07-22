@@ -1,20 +1,15 @@
-* { box-sizing: border-box; }
-body { margin: 0; font-family: Arial, sans-serif; color: #1f2937; background: #f3f4f6; }
-a { color: #2563eb; text-decoration: none; }
-.container { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
-.topbar { background: #111827; color: white; padding: 14px 0; }
-.topbar-inner { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.brand { color: white; font-weight: 700; font-size: 18px; }
-nav a { color: #dbeafe; margin-left: 18px; }
-.hero { padding: 48px 0 24px; }
-.hero h1 { max-width: 850px; font-size: 34px; margin: 0 0 14px; }
-.hero p { max-width: 760px; font-size: 18px; color: #4b5563; }
+/* Legacy styles - keep only what doesn't conflict with Tailwind */
+
+/* Keep custom component styles */
 .card { background: white; border-radius: 16px; padding: 24px; margin: 22px 0; box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08); }
 .narrow { max-width: 760px; }
 .grid.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 .section-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 .button { display: inline-block; border: 0; background: #2563eb; color: white; padding: 12px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 10px; }
 .button.secondary { background: #4b5563; }
+.button.danger { background:#b91c1c; }
+.button:disabled { background: #d1d5db; color: #6b7280; cursor: not-allowed; opacity: 0.7; }
+.muted-button { background:#6b7280; }
 .status { display: inline-block; background: #e0f2fe; color: #075985; padding: 4px 9px; border-radius: 999px; font-size: 13px; font-weight: 700; }
 .status.big { font-size: 16px; padding: 7px 13px; }
 .muted { color: #6b7280; }
@@ -22,7 +17,7 @@ nav a { color: #dbeafe; margin-left: 18px; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 11px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
 .form label { display: block; font-weight: 700; margin: 14px 0; }
-input, textarea { display: block; width: 100%; margin-top: 7px; padding: 11px; border: 1px solid #d1d5db; border-radius: 9px; font: inherit; background: white; }
+input, textarea, select { display: block; width: 100%; margin-top: 7px; padding: 11px; border: 1px solid #d1d5db; border-radius: 9px; font: inherit; background: white; }
 textarea { resize: vertical; }
 .error, .errorlist { background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 9px; margin: 8px 0; list-style: none; }
 .autocomplete { position: relative; }
@@ -38,28 +33,20 @@ textarea { resize: vertical; }
 .timeline li { margin-bottom: 12px; }
 .check { border-left: 4px solid #bfdbfe; padding-left: 14px; margin-bottom: 18px; }
 code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; }
-@media (max-width: 760px) {
-  .grid.two { grid-template-columns: 1fr; }
-  .topbar-inner { align-items: flex-start; flex-direction: column; }
-  nav a { display: inline-block; margin: 6px 12px 0 0; }
-}
 .messages { margin-top: 20px; }
 .message { padding: 12px 14px; border-radius: 10px; margin-bottom: 10px; background: #e0f2fe; color: #075985; }
 .message.success { background: #dcfce7; color: #166534; }
 .message.error { background: #fee2e2; color: #991b1b; }
-
-select { display:block; width:100%; margin-top:7px; padding:11px; border:1px solid #d1d5db; border-radius:9px; font:inherit; background:white; }
 .filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:end; }
 .filters label { font-weight:700; }
-.muted-button { background:#6b7280; }
-.button.danger { background:#b91c1c; }
 .decision-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .table-scroll { overflow-x:auto; }
-@media (max-width:760px) { .filters, .decision-grid { grid-template-columns:1fr; } }
 .nav-form { display: inline; margin-left: 12px; }
 .nav-button { border: 0; background: transparent; color: #dbeafe; cursor: pointer; font: inherit; padding: 0; }
 .nav-user { color: #9ca3af; margin-left: 18px; }
 .auth-card { margin-left: auto; margin-right: auto; }
 
-.button { display: inline-block; border: 0; background: #2563eb; color: white; padding: 12px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 10px; }
-.button:disabled { background: #d1d5db; color: #6b7280; cursor: not-allowed; opacity: 0.7; }
+@media (max-width: 760px) {
+  .grid.two { grid-template-columns: 1fr; }
+  .filters, .decision-grid { grid-template-columns:1fr; }
+}
