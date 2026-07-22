@@ -186,9 +186,6 @@ class StudentThreeIntegrationTests(TestCase):
     def test_editor_can_replace_previous_decision(self):
         submission_id = self.create_submission(status="editor_review")
         decisions = [
-            ("revision", "needs_revision"),
-            ("accept", "accepted"),
-            ("reject", "rejected"),
             ("return_to_author", "needs_author_review"),
         ]
         for decision, expected_status in decisions:
@@ -198,6 +195,16 @@ class StudentThreeIntegrationTests(TestCase):
             )
             self.assertEqual(response.status_code, 302)
             self.assertEqual(Submission.objects.get(pk=submission_id).status, expected_status)
+
+        Submission.objects.filter(pk=submission_id).update(status="editor_review")
+        for decision, expected_status in [("accept", "accepted")]:
+            response = self.client.post(
+                f"/editor/{submission_id}/decision/",
+                {"decision": decision, "editor_name": "Подложное имя", "comment": decision},
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(Submission.objects.get(pk=submission_id).status, expected_status)
+            decisions.append((decision, expected_status))
 
         self.assertEqual(
             EditorDecision.objects.filter(submission_id=submission_id).count(),

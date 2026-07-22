@@ -9,6 +9,7 @@ from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 
 from accounts.permissions import editor_required, is_editor
+from .models import SubmissionExtras
 from submissions.models import Submission
 from submissions.services import SubmissionService, resolve_stored_file_path
 from submissions.status_machine import VALID_STATUSES, ALLOWED_TRANSITIONS
@@ -19,14 +20,13 @@ RISK_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 DECISION_TO_STATUS = {
     "accept": "accepted",
     "reject": "rejected",
-    "revision": "needs_revision",
     "return_to_author": "needs_author_review",
 }
 DECISION_LABELS = {
     "accept": "Материал принят.",
     "reject": "Материал отклонён.",
-    "revision": "Материал отправлен на доработку.",
-    "return_to_author": "Материал возвращён автору на согласование.",
+    "return_to_author": "Материал отправлен на доработку.",
+    "postpone": "Решение по материалу отложено.",
     "include_in_issue": "Материал включён в выпуск.",
     "exclude_from_issue": "Материал исключён из выпуска.",
 }
@@ -113,18 +113,26 @@ def editor_list(request: HttpRequest):
     })
 
 
+def _is_postponed_for_status(submission_id: str, status: str) -> bool:
+    extras = SubmissionExtras.objects.filter(pk=submission_id).first()
+    return bool(extras and extras.postponed_at and extras.postponed_at_status == status)
+
+
 @editor_required
 def editor_card(request: HttpRequest, submission_id: str):
     try:
         submission = _with_display_times(_with_summary(_service().get_submission(submission_id)))
     except ObjectDoesNotExist as exc:
         raise Http404("Заявка не найдена") from exc
+    postponed = _is_postponed_for_status(submission_id, submission["status"])
     return render(request, "editorial/editor_card.html", {
         "submission": submission,
-        "available_decisions": _available_decisions(submission["status"]),
+        "available_decisions": _available_decisions(submission["status"], postponed),
     })
 
 
+@editor_required
+@require_POST
 @editor_required
 @require_POST
 def editor_decision(request: HttpRequest, submission_id: str):
@@ -133,16 +141,30 @@ def editor_decision(request: HttpRequest, submission_id: str):
     svc = _service()
     try:
         submission = svc.get_submission_model(submission_id)
-        available = _available_decisions(submission.status)
+        postponed = _is_postponed_for_status(submission_id, submission.status)
+        available = _available_decisions(submission.status, postponed)
         if not available.get(decision):
             raise ValueError(
                 f"Действие «{DECISION_LABELS.get(decision, decision)}» недоступно "
                 f"для текущего статуса заявки «{submission.status}»."
             )
-        if decision == "include_in_issue":
+        if decision == "postpone":
+            svc.save_editor_decision(
+                submission_id,
+                "postpone",
+                request.user,
+                comment or DECISION_LABELS["postpone"],
+            )
+            SubmissionExtras.objects.update_or_create(
+                submission_id=submission_id,
+                defaults={"postponed_at": timezone.now(), "postponed_at_status": submission.status},
+            )
+        elif decision == "include_in_issue":
             issue_service.add_submission(submission.issue_id, submission_id, actor=request.user)
+            svc.save_editor_decision(submission_id, decision, request.user, comment or DECISION_LABELS[decision])
         elif decision == "exclude_from_issue":
             issue_service.remove_submission(submission.issue_id, submission_id, actor=request.user)
+            svc.save_editor_decision(submission_id, decision, request.user, comment or DECISION_LABELS[decision])
         else:
             if decision not in DECISION_TO_STATUS:
                 raise ValueError("Неизвестное решение редактора.")
@@ -152,13 +174,8 @@ def editor_decision(request: HttpRequest, submission_id: str):
                 request.user,
                 comment or DECISION_LABELS[decision],
             )
-        if decision in {"include_in_issue", "exclude_from_issue"}:
-            svc.save_editor_decision(
-                submission_id,
-                decision,
-                request.user,
-                comment or DECISION_LABELS[decision],
-            )
+        if decision != "postpone":
+            SubmissionExtras.objects.filter(pk=submission_id).delete()
         messages.success(request, DECISION_LABELS.get(decision, "Решение сохранено."))
     except ObjectDoesNotExist as exc:
         raise Http404("Заявка не найдена") from exc
@@ -319,13 +336,28 @@ def archive_issue(request: HttpRequest, issue_id: str):
     return HttpResponse(path.read_text(encoding="utf-8"), content_type="text/html; charset=utf-8")
 
 
-def _available_decisions(status: str) -> dict[str, bool]:
+def _last_transition_is_author_confirmation(history_entries) -> bool:
+    entries = list(history_entries)
+    if not entries:
+        return False
+    last = entries[-1]
+    from_status = last.from_status if hasattr(last, "from_status") else last.get("from_status")
+    to_status = last.to_status if hasattr(last, "to_status") else last.get("to_status")
+    return from_status == "author_confirmed" and to_status == "editor_review"
+
+
+def _available_decisions(status: str, postponed: bool = False) -> dict[str, bool]:
     allowed_next = ALLOWED_TRANSITIONS.get(status, set())
+    accept = "accepted" in allowed_next
+    reject = "rejected" in allowed_next
+    return_to_author = "needs_author_review" in allowed_next
+    include_in_issue = status == "accepted"
+    exclude_from_issue = status == "included_in_issue"
     return {
-        "accept": "accepted" in allowed_next,
-        "reject": "rejected" in allowed_next,
-        "revision": "needs_revision" in allowed_next,
-        "return_to_author": "needs_author_review" in allowed_next,
-        "include_in_issue": status == "accepted",
-        "exclude_from_issue": status == "included_in_issue",
+        "accept": accept,
+        "reject": reject,
+        "return_to_author": return_to_author,
+        "include_in_issue": include_in_issue,
+        "exclude_from_issue": exclude_from_issue,
+        "postpone": any([accept, reject, return_to_author, include_in_issue, exclude_from_issue]) and not postponed,
     }

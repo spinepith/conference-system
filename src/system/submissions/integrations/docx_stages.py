@@ -157,6 +157,23 @@ class ExtractMetadataStage(BaseWorkflowStage):
         }
 
 
+def _overlay_author_provided_fields(metadata: dict[str, Any], submission_metadata: dict[str, Any]) -> dict[str, Any]:
+    field_map = {
+        "abstract": "abstract_ru",
+        "keywords": "keywords_ru",
+        "supervisor": "supervisor",
+        "title": "title_ru",
+    }
+    merged = dict(metadata)
+    for extracted_key, submission_key in field_map.items():
+        if merged.get(extracted_key):
+            continue
+        author_value = submission_metadata.get(submission_key)
+        if author_value:
+            merged[extracted_key] = author_value
+    return merged
+
+
 class FormatToTemplateStage(BaseWorkflowStage):
     stage_id = "format_to_template"
     title = "Приведение материала к шаблону"
@@ -191,7 +208,7 @@ class FormatToTemplateStage(BaseWorkflowStage):
                 "message": "Не удалось прочитать extracted_metadata.json.",
                 "next_status": "error",
             }
-
+        metadata = _overlay_author_provided_fields(metadata, submission.get("metadata") or {})
         template_path = Path(settings.CONFERENCE_TEMPLATE_PATH)
         if not template_path.exists():
             return {

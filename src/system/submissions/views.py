@@ -227,7 +227,7 @@ def upload_revision(request: HttpRequest, submission_id: str):
     if not uploaded_file or not uploaded_file.name.lower().endswith(".docx"):
         return HttpResponseBadRequest("Можно загрузить только DOCX-файл.")
     submission = _owned_submission_or_404(request, submission_id)
-    if submission.status not in {"needs_revision", "needs_author_review", "error"}:
+    if submission.status not in {"needs_revision", "error"}:
         messages.error(request, "Исправленную версию нельзя загрузить на текущем этапе.")
         return redirect("status", submission_id=submission_id)
     svc = service()

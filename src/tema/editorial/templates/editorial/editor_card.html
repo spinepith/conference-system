@@ -12,72 +12,6 @@
   </a>
 </section>
 
-<<<<<<< HEAD
-<section class="grid two">
-  <div class="card">
-    <h2>Файлы</h2>
-    {% if submission.files %}
-      <ul class="files-list">
-        {% for file_type,path in submission.files.items %}
-          <li><span>{{ file_type }}</span><a href="{% url 'editorial:download_by_type' submission.submission_id file_type %}">Скачать</a></li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="empty">Файлов нет.</p>
-    {% endif %}
-    <form method="post" action="{% url 'run_workflow_page' submission.submission_id %}">
-      {% csrf_token %}
-      <button class="button secondary" type="submit">Запустить полный workflow</button>
-    </form>
-    <form method="post" action="{% url 'editorial:run_pdf_export' submission.submission_id %}">
-      {% csrf_token %}
-      <button class="button" type="submit">Пересобрать PDF и ZIP</button>
-    </form>
-  </div>
-
-  <div class="card">
-    <h2>Решение редактора</h2>
-    <form method="post" action="{% url 'editorial:editor_decision' submission.submission_id %}">
-      {% csrf_token %}
-      <p><b>Решение принимает:</b> {{ user.get_full_name|default:user.username }}</p>
-      <p class="muted">Текущий статус: <b>{{ submission.status }}</b> — активны только те кнопки, переход по которым сейчас разрешён.</p>
-      <label>Комментарий<textarea name="comment" rows="3"></textarea></label>
-      <div class="decision-grid">
-        <button type="submit" class="button" name="decision" value="accept" {% if not available_decisions.accept %}disabled{% endif %}>Принять</button>
-        <button type="submit" class="button danger" name="decision" value="reject" {% if not available_decisions.reject %}disabled{% endif %}>Отклонить</button>
-        <button type="submit" class="button secondary" name="decision" value="revision" {% if not available_decisions.revision %}disabled{% endif %}>На доработку</button>
-        <button type="submit" class="button secondary" name="decision" value="return_to_author" {% if not available_decisions.return_to_author %}disabled{% endif %}>Автору на согласование</button>
-        {% if available_decisions.include_in_issue %}
-<button type="submit"
-        class="button"
-        name="decision"
-        value="include_in_issue">
-    Включить в выпуск
-</button>
-{% endif %}
-
-{% if available_decisions.exclude_from_issue %}
-<button type="submit"
-        class="button muted-button"
-        name="decision"
-        value="exclude_from_issue">
-    Исключить из выпуска
-</button>
-{% endif %}
-      </div>
-      {% if not available_decisions.include_in_issue and not available_decisions.exclude_from_issue %}
-        <p class="muted">Работа с выпуском станет доступна после того, как материал будет принят редактором (статус «accepted»).</p>
-      {% endif %}
-    </form>
-    {% if submission.editor_decision %}
-      <p>
-        <b>Последнее решение:</b> {{ submission.editor_decision.decision }} ·
-        {{ submission.editor_decision.editor_name }} ·
-        {{ submission.editor_decision.created_at_display }}<br>
-        {{ submission.editor_decision.comment }}
-      </p>
-    {% endif %}
-=======
 <!-- Header Section -->
 <section class="max-w-7xl mx-auto px-6 py-8">
   <div class="glass-strong rounded-4xl p-8 md:p-12 fade-in">
@@ -130,7 +64,6 @@
         </div>
       </div>
     </div>
->>>>>>> 17c3267 (redesign)
   </div>
 </section>
 
@@ -204,26 +137,34 @@
           <textarea name="comment" rows="3" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300 resize-vertical"></textarea>
         </div>
 
+      <p class="text-white/50 text-sm">Текущий статус: <b class="text-white">{{ submission.status }}</b> — активны только те кнопки, переход по которым сейчас разрешён.</p>
         <div class="grid grid-cols-2 gap-3">
-          <button type="submit" name="decision" value="accept" class="px-4 py-3 rounded-full bg-green-500/20 hover:bg-green-500/30 text-green-300 font-medium border  transition-all duration-300">
+          <button type="submit" name="decision" value="accept" {% if not available_decisions.accept %}disabled{% endif %} class="px-4 py-3 rounded-full bg-green-500/20 hover:bg-green-500/30 text-green-300 font-medium border  transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed">
             Принять
           </button>
-          <button type="submit" name="decision" value="reject" class="px-4 py-3 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-300 font-medium border  transition-all duration-300">
+          <button type="submit" name="decision" value="reject" {% if not available_decisions.reject %}disabled{% endif %} class="px-4 py-3 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-300 font-medium border  transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed">
             Отклонить
           </button>
-          <button type="submit" name="decision" value="revision" class="px-4 py-3 rounded-full glass-strong hover:glass text-white font-medium transition-all duration-300">
-            На доработку
+          <button type="submit" name="decision" value="return_to_author" {% if not available_decisions.return_to_author %}disabled{% endif %} class="px-4 py-3 rounded-full glass-strong hover:glass text-white font-medium transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed">
+            Отправить на доработку
           </button>
-          <button type="submit" name="decision" value="return_to_author" class="px-4 py-3 rounded-full glass-strong hover:glass text-white font-medium transition-all duration-300">
-            Автору на согласование
+          <button type="submit" name="decision" value="postpone" {% if not available_decisions.postpone %}disabled{% endif %} class="px-4 py-3 rounded-full glass-strong hover:glass text-white/70 font-medium transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed">
+            Отложить решение
           </button>
+          {% if available_decisions.include_in_issue %}
           <button type="submit" name="decision" value="include_in_issue" class="px-4 py-3 rounded-full bg-primary/20 hover:bg-primary/30 text-primary-light font-medium border  transition-all duration-300">
             Включить в выпуск
           </button>
+          {% endif %}
+          {% if available_decisions.exclude_from_issue %}
           <button type="submit" name="decision" value="exclude_from_issue" class="px-4 py-3 rounded-full glass-strong hover:glass text-white/70 font-medium transition-all duration-300">
             Исключить из выпуска
           </button>
+          {% endif %}
         </div>
+        {% if not available_decisions.include_in_issue and not available_decisions.exclude_from_issue %}
+          <p class="text-white/50 text-sm">Работа с выпуском станет доступна после того, как материал будет принят редактором (статус «accepted»).</p>
+        {% endif %}
       </form>
 
       {% if submission.editor_decision %}

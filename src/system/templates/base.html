@@ -4,7 +4,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Conference System MVP{% endblock %}</title>
+  <title>{% block title %}Conference System{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,9 +14,6 @@
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Custom styles AFTER Tailwind -->
-  <link rel="stylesheet" href="{% static 'styles.css' %}">
 
   <script>
     tailwind.config = {
@@ -92,13 +90,13 @@
 
     /* Liquid Glass Effect */
     .glass {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       box-shadow:
         0 8px 32px 0 rgba(31, 38, 135, 0.15),
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
-        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04);
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.1);
       position: relative;
     }
 
@@ -111,7 +109,7 @@
       bottom: 0;
       border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -119,13 +117,13 @@
     }
 
     .glass-strong {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
       backdrop-filter: blur(30px) saturate(200%);
       -webkit-backdrop-filter: blur(30px) saturate(200%);
       box-shadow:
-        0 8px 32px 0 rgba(0, 0, 0, 0.1),
-        inset 0 2px 0 0 rgba(255, 255, 255, 0.1),
-        inset 0 -2px 0 0 rgba(255, 255, 255, 0.05);
+        0 8px 32px 0 rgba(31, 38, 135, 0.2),
+        inset 0 2px 0 0 rgba(255, 255, 255, 0.25),
+        inset 0 -2px 0 0 rgba(255, 255, 255, 0.15);
       position: relative;
     }
 
@@ -138,7 +136,7 @@
       bottom: 0;
       border-radius: inherit;
       padding: 1.5px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15));
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -184,8 +182,10 @@
           <a href="{% url 'editorial:archive_index' %}" class="text-white/70 hover:text-white transition-colors duration-300">Архив</a>
 
           {% if user.is_authenticated %}
-            <a href="{% url 'index' %}" class="text-white/70 hover:text-white transition-colors duration-300">Мои материалы</a>
-            <a href="{% url 'submit' %}" class="text-white/70 hover:text-white transition-colors duration-300">Подать материал</a>
+              {% if not is_editor_role %}
+                <a href="{% url 'index' %}" class="text-white/70 hover:text-white transition-colors duration-300">Мои материалы</a>
+                <a href="{% url 'submit' %}" class="text-white/70 hover:text-white transition-colors duration-300">Подать материал</a>
+              {% endif %}
 
             {% if is_editor_role %}
               <a href="{% url 'editorial:editor_list' %}" class="text-white/70 hover:text-white transition-colors duration-300">Редактор</a>
@@ -228,8 +228,10 @@
           <a href="{% url 'editorial:archive_index' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Архив</a>
 
           {% if user.is_authenticated %}
-            <a href="{% url 'index' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Мои материалы</a>
-            <a href="{% url 'submit' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Подать материал</a>
+           {% if not is_editor_role %}
+              <a href="{% url 'index' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Мои материалы</a>
+              <a href="{% url 'submit' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Подать материал</a>
+            {% endif %}
 
             {% if is_editor_role %}
               <a href="{% url 'editorial:editor_list' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Редактор</a>
@@ -290,7 +292,9 @@
           <ul class="space-y-1 text-xs">
             <li><a href="{% url 'index' %}" class="text-white/60 hover:text-white transition-colors duration-300">Главная</a></li>
             <li><a href="{% url 'editorial:archive_index' %}" class="text-white/60 hover:text-white transition-colors duration-300">Архив</a></li>
-            <li><a href="{% url 'submit' %}" class="text-white/60 hover:text-white transition-colors duration-300">Подать материал</a></li>
+            {% if not is_editor_role %}
+              <li><a href="{% url 'submit' %}" class="text-white/60 hover:text-white transition-colors duration-300">Подать материал</a></li>
+            {% endif %}
           </ul>
         </div>
         <div>

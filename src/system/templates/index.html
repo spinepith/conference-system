@@ -17,11 +17,13 @@
     <!-- CTA Buttons -->
     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
       {% if user.is_authenticated %}
-        <a href="{% url 'submit' %}" class="w-full sm:w-auto px-8 py-4 rounded-full bg-primary hover:bg-primary-dark transition-all duration-500 text-white font-semibold text-lg btn-glow transform hover:scale-105">
-          Подать материал
-        </a>
+        {% if not is_editor_role %}
+          <a href="{% url 'submit' %}" class="w-full sm:w-auto px-8 py-4 rounded-full bg-primary hover:bg-primary-dark transition-all duration-500 text-white font-semibold text-lg btn-glow transform hover:scale-105">
+            Подать материал
+          </a>
+        {% endif %}
         {% if is_editor_role %}
-          <a href="{% url 'editorial:editor_list' %}" class="w-full sm:w-auto px-8 py-4 rounded-full glass-strong hover:glass transition-all duration-500 text-white font-semibold text-lg">
+          <a href="{% url 'editorial:editor_list' %}" class="w-full sm:w-auto px-8 py-4 rounded-full bg-primary hover:bg-primary-dark transition-all duration-500 text-white font-semibold text-lg btn-glow transform hover:scale-105">
             Редакторская панель
           </a>
         {% endif %}
@@ -79,9 +81,15 @@
       </div>
       <div class="flex flex-col gap-3">
         {% if user.is_authenticated %}
-          <a href="{% url 'submit' %}" class="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-semibold text-center btn-glow whitespace-nowrap">
-            Подать материал
-          </a>
+          {% if is_editor_role %}
+            <a href="{% url 'editorial:editor_list' %}" class="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-semibold text-center btn-glow whitespace-nowrap">
+              Редакторская панель
+            </a>
+          {% else %}
+            <a href="{% url 'submit' %}" class="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-semibold text-center btn-glow whitespace-nowrap">
+              Подать материал
+            </a>
+          {% endif %}
         {% else %}
           <a href="{% url 'accounts:register' %}" class="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-semibold text-center btn-glow whitespace-nowrap">
             Принять участие
@@ -172,7 +180,7 @@
   </div>
 </section>
 
-{% if user.is_authenticated %}
+{% if user.is_authenticated and not is_editor_role %}
 <!-- My Submissions Section -->
 <section class="max-w-7xl mx-auto px-6 py-20">
   <div class="glass-strong rounded-4xl p-8 md:p-12">

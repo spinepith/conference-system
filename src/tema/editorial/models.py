@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.db import models
 
-from submissions.models import Issue
+from submissions.models import Issue, Submission
 
 
 class IssueExtras(models.Model):
@@ -23,3 +23,26 @@ class IssueExtras(models.Model):
 
     def __str__(self) -> str:
         return f"Дополнительные данные выпуска {self.issue_id}"
+
+
+class SubmissionExtras(models.Model):
+
+    submission = models.OneToOneField(
+        Submission,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="editorial_extras",
+    )
+    postponed_at = models.DateTimeField(null=True, blank=True)
+    postponed_at_status = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        verbose_name = "Отложенное решение по заявке"
+        verbose_name_plural = "Отложенные решения по заявкам"
+
+    def __str__(self) -> str:
+        return f"Доп. данные заявки {self.submission_id}"
+
+    @property
+    def is_postponed_for_current_status(self) -> bool:
+        return bool(self.postponed_at) and self.postponed_at_status == self.submission.status

@@ -1,5 +1,3 @@
-"""DOCX -> PDF export through LibreOffice headless."""
-
 from __future__ import annotations
 
 import os
