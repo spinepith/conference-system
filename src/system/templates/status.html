@@ -5,7 +5,7 @@
 {% block content %}
 <!-- Header Section -->
 <section class="max-w-7xl mx-auto px-6 py-12">
-  <div class="glass-strong rounded-4xl p-8 md:p-12 fade-in">
+  <div class="glass-strong rounded-3xl p-8 md:p-12 fade-in">
     <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
       <div>
         <div class="flex items-center gap-3 mb-3">
@@ -24,7 +24,7 @@
     <!-- Two Column Info Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <!-- Author Info -->
-      <div class="glass rounded-4xl p-6">
+      <div class="glass rounded-3xl p-6">
         <h3 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
@@ -48,7 +48,7 @@
       </div>
 
       <!-- Material Info -->
-      <div class="glass rounded-4xl p-6">
+      <div class="glass rounded-3xl p-6">
         <h3 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
@@ -77,7 +77,7 @@
 <!-- Extracted Metadata Section -->
 {% if submission.metadata.extracted_metadata %}
 <section class="max-w-7xl mx-auto px-6 py-6">
-  <div class="glass-strong rounded-4xl p-8 md:p-12">
+  <div class="glass-strong rounded-3xl p-8 md:p-12">
     <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
       <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -121,7 +121,7 @@
 
 <!-- Files Section -->
 <section class="max-w-7xl mx-auto px-6 py-6">
-  <div class="glass-strong rounded-4xl p-8 md:p-12">
+  <div class="glass-strong rounded-3xl p-8 md:p-12">
     <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
       <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
@@ -132,7 +132,7 @@
     {% if author_files %}
       <div class="space-y-3">
         {% for file in author_files %}
-          <div class="glass rounded-4xl p-4 flex items-center justify-between gap-4 hover:bg-white/5 transition-colors duration-200">
+          <div class="glass rounded-3xl p-4 flex items-center justify-between gap-4 hover:bg-white/5 transition-colors duration-200">
             <span class="text-white">{{ file.file_type }}</span>
             <a href="{% url 'download_file' file.id %}" class="px-4 py-2 rounded-full bg-primary/20 hover:bg-primary/30 text-primary-light transition-all duration-300 font-medium inline-flex items-center gap-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,7 +157,7 @@
 <!-- Author Actions Section -->
 {% if submission.owner_id == user.id %}
 <section class="max-w-7xl mx-auto px-6 py-6">
-  <div class="glass-strong rounded-4xl p-8 md:p-12">
+  <div class="glass-strong rounded-3xl p-8 md:p-12">
     <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
       <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -180,7 +180,7 @@
         <label class="block text-white font-medium mb-3">
           Загрузить исправленную версию DOCX
         </label>
-        <div class="glass rounded-4xl p-4 border-dashed mb-4">
+        <div class="glass rounded-3xl p-4 border-dashed mb-4">
           <input type="file" name="revision_docx" accept=".docx" required class="w-full">
         </div>
         <button type="submit" class="px-6 py-3 rounded-full glass-strong hover:glass transition-all duration-300 text-white font-semibold">
@@ -205,7 +205,7 @@
 <section class="max-w-7xl mx-auto px-6 py-6 pb-20">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Checks Results -->
-    <div class="glass-strong rounded-4xl p-8">
+    <div class="glass-strong rounded-3xl p-8">
       <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
         <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
@@ -214,7 +214,7 @@
       </h2>
 
       {% for check in submission.checks.all %}
-        <article class="glass rounded-4xl p-5 mb-4 border-l-4 border-primary">
+        <article class="glass rounded-3xl p-5 mb-4 border-l-4 border-primary">
           <h3 class="text-lg font-semibold text-white mb-2">{{ check.title|default:check.check_id }}</h3>
           <div class="flex gap-4 text-sm text-white/60 mb-3">
             <span><b>Статус:</b> {{ check.status }}</span>
@@ -246,7 +246,7 @@
     </div>
 
     <!-- Processing History -->
-    <div class="glass-strong rounded-4xl p-8">
+    <div class="glass-strong rounded-3xl p-8">
       <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
         <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -276,7 +276,7 @@
     padding: 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: 24px;
     color: white;
     font-size: 16px;
     cursor: pointer;
@@ -287,7 +287,7 @@
     padding: 8px 16px;
     background: rgba(48, 84, 255, 0.2);
     border: 1px solid #3054ff;
-    border-radius: 8px;
+    border-radius: 9999px;
     color: white;
     cursor: pointer;
     transition: all 0.3s ease;

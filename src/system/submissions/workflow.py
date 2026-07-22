@@ -26,8 +26,9 @@ class WorkflowEngine:
         stage_status: str,
         result_payload: dict,
     ) -> None:
+        current = service.get_submission(submission_id)["status"]
+
         if stage_status == "failed":
-            current = service.get_submission(submission_id)["status"]
             if current != "error":
                 service.update_submission_status(
                     submission_id,
@@ -44,7 +45,27 @@ class WorkflowEngine:
         if not next_status:
             return
 
-        current = service.get_submission(submission_id)["status"]
+        # If current status is "error", always try to update to next_status
+        if current == "error":
+            try:
+                service.update_submission_status(
+                    submission_id,
+                    next_status,
+                    result_payload.get("message", "Ошибка исправлена. Этап workflow завершён успешно."),
+                    "workflow",
+                )
+            except ValueError as exc:
+                service.add_event(
+                    submission_id,
+                    "workflow_status_unchanged",
+                    {
+                        "current_status": current,
+                        "requested_status": next_status,
+                        "reason": str(exc),
+                    },
+                )
+            return
+
         if current == next_status:
             return
         try:

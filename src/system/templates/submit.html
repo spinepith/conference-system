@@ -16,7 +16,7 @@
     </div>
 
     <!-- Form Card -->
-    <div class="glass-strong rounded-4xl p-8 md:p-12">
+    <div class="glass-strong rounded-3xl p-8 md:p-12">
       <form class="space-y-8" method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
 
@@ -196,7 +196,7 @@
             {{ form.docx_file.label }}
             <span class="text-red-400">*</span>
           </label>
-          <div class="glass rounded-4xl p-6 border-dashed hover: transition-colors duration-300">
+          <div class="glass rounded-3xl p-6 border-dashed hover: transition-colors duration-300">
             {{ form.docx_file }}
             <p class="mt-2 text-white/50 text-sm">Формат: DOCX, максимальный размер: 10 МБ</p>
           </div>
@@ -225,23 +225,23 @@
   select {
     width: 100%;
     padding: 14px 18px;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: 9999px;
     color: white;
     font-size: 16px;
     transition: all 0.3s ease;
-    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-family: 'Instrument Sans', system-ui, sans-serif !important;
+    caret-color: white;
   }
 
   input[type="text"]:focus,
   input[type="email"]:focus,
   textarea:focus,
   select:focus {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: #3054ff;
+    border-color: #8b5cf6;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(48, 84, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
   }
 
   input[type="text"]::placeholder,
@@ -262,9 +262,9 @@
 
   input[type="file"]::file-selector-button {
     padding: 8px 16px;
-    background: rgba(48, 84, 255, 0.2);
-    border: 1px solid #3054ff;
-    border-radius: 8px;
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid #8b5cf6;
+    border-radius: 9999px;
     color: white;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -272,7 +272,7 @@
   }
 
   input[type="file"]::file-selector-button:hover {
-    background: rgba(48, 84, 255, 0.3);
+    background: rgba(139, 92, 246, 0.3);
   }
 
   /* Autocomplete Styles */
@@ -291,7 +291,7 @@
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: 24px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     padding: 6px;
   }
@@ -302,7 +302,7 @@
     background: transparent;
     text-align: left;
     padding: 12px 14px;
-    border-radius: 8px;
+    border-radius: 9999px;
     cursor: pointer;
     font: inherit;
     color: rgba(255, 255, 255, 0.8);
@@ -325,7 +325,7 @@
   .author-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
+    border-radius: 24px;
     padding: 20px;
     margin-bottom: 16px;
   }
@@ -346,7 +346,7 @@
     padding: 10px;
     background: rgba(220, 38, 38, 0.1);
     border: 1px solid rgba(220, 38, 38, 0.3);
-    border-radius: 8px;
+    border-radius: 9999px;
     color: #fca5a5;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -373,7 +373,7 @@
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: 24px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     padding: 6px;
   }

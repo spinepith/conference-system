@@ -18,13 +18,13 @@
 
 <!-- Filters Section -->
 <section class="max-w-7xl mx-auto px-6 py-6">
-  <div class="glass-strong rounded-4xl p-8">
+  <div class="glass-strong rounded-3xl p-8">
     <form method="get">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <!-- Issue Filter -->
         <div class="form-group">
           <label class="block text-white font-medium mb-2">Выпуск</label>
-          <select name="issue_id" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
+          <select name="issue_id" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-3xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
             <option value="">Все выпуски</option>
             {% for issue in issues %}
               <option value="{{ issue.issue_id }}" {% if filter_issue_id == issue.issue_id %}selected{% endif %}>
@@ -37,7 +37,7 @@
         <!-- Status Filter -->
         <div class="form-group">
           <label class="block text-white font-medium mb-2">Статус</label>
-          <select name="status" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
+          <select name="status" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-3xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
             <option value="">Все статусы</option>
             {% for value in statuses %}
               <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ value }}</option>
@@ -48,7 +48,7 @@
         <!-- Search Filter -->
         <div class="form-group">
           <label class="block text-white font-medium mb-2">Автор или название</label>
-          <input type="text" name="q" value="{{ filter_q }}" placeholder="Введите строку поиска" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
+          <input type="text" name="q" value="{{ filter_q }}" placeholder="Введите строку поиска" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-3xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
         </div>
       </div>
 
@@ -67,7 +67,7 @@
 
 <!-- Submissions Table -->
 <section class="max-w-7xl mx-auto px-6 py-6 pb-20">
-  <div class="glass-strong rounded-4xl p-8 md:p-12">
+  <div class="glass-strong rounded-3xl p-8 md:p-12">
     {% if submissions %}
       <div class="overflow-x-auto">
         <table class="w-full">

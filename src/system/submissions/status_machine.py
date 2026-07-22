@@ -31,7 +31,7 @@ ALLOWED_TRANSITIONS = {
     "rejected": {"editor_review", "error"},
     "included_in_issue": {"published", "error"},
     "published": {"error"},
-    "error": {"uploaded", "needs_revision", "editor_review"},
+    "error": {"uploaded", "needs_revision", "editor_review", "structure_extracted", "formatted", "auto_checking", "auto_checked", "needs_author_review"},
 }
 
 

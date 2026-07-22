@@ -182,9 +182,9 @@ class ContentValidationStage(BaseWorkflowStage):
         overall_status = str(final_result.get("overall_status") or "needs_attention")
         stage_status = "success" if overall_status == "passed" else "warning"
         message = (
-            "Автоматические проверки успешно пройдены. Материал передан автору на согласование."
+            "Автоматические проверки успешно пройдены. Материал готов к рассмотрению редактором."
             if overall_status == "passed"
-            else "Автоматические проверки завершены с замечаниями. Материал передан автору на согласование."
+            else "Автоматические проверки завершены с замечаниями. Материал готов к рассмотрению редактором."
         )
         return {
             "status": stage_status,
@@ -195,7 +195,7 @@ class ContentValidationStage(BaseWorkflowStage):
             "editor_message": final_result.get("editor_message", ""),
             "report_file": report_file["path"],
             "checks": imported_checks,
-            "next_status": "needs_author_review",
+            "next_status": "editor_review",
         }
 
 

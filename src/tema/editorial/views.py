@@ -125,9 +125,11 @@ def editor_card(request: HttpRequest, submission_id: str):
     except ObjectDoesNotExist as exc:
         raise Http404("Заявка не найдена") from exc
     postponed = _is_postponed_for_status(submission_id, submission["status"])
+    available_issues = issue_service.list_issues_summary()
     return render(request, "editorial/editor_card.html", {
         "submission": submission,
         "available_decisions": _available_decisions(submission["status"], postponed),
+        "available_issues": available_issues,
     })
 
 
@@ -138,6 +140,7 @@ def editor_card(request: HttpRequest, submission_id: str):
 def editor_decision(request: HttpRequest, submission_id: str):
     decision = request.POST.get("decision", "")
     comment = request.POST.get("comment", "").strip()
+    target_issue = request.POST.get("target_issue", "").strip()
     svc = _service()
     try:
         submission = svc.get_submission_model(submission_id)
@@ -160,7 +163,8 @@ def editor_decision(request: HttpRequest, submission_id: str):
                 defaults={"postponed_at": timezone.now(), "postponed_at_status": submission.status},
             )
         elif decision == "include_in_issue":
-            issue_service.add_submission(submission.issue_id, submission_id, actor=request.user)
+            issue_id = target_issue if target_issue else submission.issue_id
+            issue_service.add_submission(issue_id, submission_id, actor=request.user)
             svc.save_editor_decision(submission_id, decision, request.user, comment or DECISION_LABELS[decision])
         elif decision == "exclude_from_issue":
             issue_service.remove_submission(submission.issue_id, submission_id, actor=request.user)

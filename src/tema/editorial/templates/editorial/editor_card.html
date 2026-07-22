@@ -14,7 +14,7 @@
 
 <!-- Header Section -->
 <section class="max-w-7xl mx-auto px-6 py-8">
-  <div class="glass-strong rounded-4xl p-8 md:p-12 fade-in">
+  <div class="glass-strong rounded-3xl p-8 md:p-12 fade-in">
     <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-6">
       <div class="flex-1">
         <h1 class="text-3xl font-bold text-white mb-3">{{ submission.metadata.title_ru|default:submission.submission_id }}</h1>
@@ -34,7 +34,7 @@
     <!-- Two Column Info -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <!-- Authors -->
-      <div class="glass rounded-4xl p-6">
+      <div class="glass rounded-3xl p-6">
         <h3 class="text-xl font-semibold text-white mb-4">Авторы</h3>
         <div class="space-y-2">
           {% for author in submission.authors %}
@@ -46,7 +46,7 @@
       </div>
 
       <!-- Metadata -->
-      <div class="glass rounded-4xl p-6">
+      <div class="glass rounded-3xl p-6">
         <h3 class="text-xl font-semibold text-white mb-4">Метаданные</h3>
         <div class="space-y-3">
           <div>
@@ -71,7 +71,7 @@
 <section class="max-w-7xl mx-auto px-6 py-6">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Files -->
-    <div class="glass-strong rounded-4xl p-8">
+    <div class="glass-strong rounded-3xl p-8">
       <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
         <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
@@ -82,7 +82,7 @@
       {% if submission.files %}
         <div class="space-y-3 mb-6">
           {% for file_type,path in submission.files.items %}
-            <div class="glass rounded-4xl p-4 flex items-center justify-between gap-4 hover:bg-white/5 transition-colors duration-200">
+            <div class="glass rounded-3xl p-4 flex items-center justify-between gap-4 hover:bg-white/5 transition-colors duration-200">
               <span class="text-white">{{ file_type }}</span>
               <a href="{% url 'editorial:download_by_type' submission.submission_id file_type %}" class="px-4 py-2 rounded-full bg-primary/20 hover:bg-primary/30 text-primary-light transition-all duration-300 font-medium inline-flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,7 +120,7 @@
     </div>
 
     <!-- Editor Decision -->
-    <div class="glass-strong rounded-4xl p-8">
+    <div class="glass-strong rounded-3xl p-8">
       <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
         <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -134,8 +134,20 @@
 
         <div>
           <label class="block text-white font-medium mb-2">Комментарий</label>
-          <textarea name="comment" rows="3" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300 resize-vertical"></textarea>
+          <textarea name="comment" rows="3" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-full text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300 resize-vertical"></textarea>
         </div>
+
+        {% if available_decisions.include_in_issue %}
+        <div>
+          <label class="block text-white font-medium mb-2">Выбрать выпуск</label>
+          <select name="target_issue" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-full text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300" style="caret-color: white;">
+            <option value="">Текущий выпуск ({{ submission.issue_id }})</option>
+            {% for issue in available_issues %}
+              <option value="{{ issue.issue_id }}">{{ issue.title }} ({{ issue.year }} Q{{ issue.quarter }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
 
       <p class="text-white/50 text-sm">Текущий статус: <b class="text-white">{{ submission.status }}</b> — активны только те кнопки, переход по которым сейчас разрешён.</p>
         <div class="grid grid-cols-2 gap-3">
@@ -183,7 +195,7 @@
 
 <!-- Automatic Checks -->
 <section class="max-w-7xl mx-auto px-6 py-6">
-  <div class="glass-strong rounded-4xl p-8 md:p-12">
+  <div class="glass-strong rounded-3xl p-8 md:p-12">
     <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
       <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
@@ -192,7 +204,7 @@
     </h2>
 
     {% for check in submission.checks %}
-      <article class="glass rounded-4xl p-6 mb-4 border-l-4 border-primary">
+      <article class="glass rounded-3xl p-6 mb-4 border-l-4 border-primary">
         <h3 class="text-lg font-semibold text-white mb-2">{{ check.title|default:check.check_id }}</h3>
         <div class="flex flex-wrap gap-4 text-sm text-white/60 mb-3">
           <span><b>Статус:</b> {{ check.status }}</span>
@@ -226,7 +238,7 @@
           <h4 class="text-white font-semibold mt-4 mb-2">Отмеченные фрагменты</h4>
           <ul class="space-y-3">
             {% for fragment in check.flagged_fragments %}
-              <li class="glass rounded-lg p-3">
+              <li class="glass rounded-3xl p-3">
                 <q class="text-white/80 italic">{{ fragment.fragment }}</q>
                 {% if fragment.risk_type %}<br><span class="text-white/50 text-xs mt-1 inline-block">Тип риска: {{ fragment.risk_type }}</span>{% endif %}
                 {% if fragment.reason %}<br><span class="text-white/70 text-sm">{{ fragment.reason }}</span>{% endif %}
@@ -251,7 +263,7 @@
 <section class="max-w-7xl mx-auto px-6 py-6 pb-20">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Status History -->
-    <div class="glass-strong rounded-4xl p-8">
+    <div class="glass-strong rounded-3xl p-8">
       <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
         <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -276,7 +288,7 @@
     </div>
 
     <!-- Workflow -->
-    <div class="glass-strong rounded-4xl p-8">
+    <div class="glass-strong rounded-3xl p-8">
       <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
         <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -285,7 +297,7 @@
       </h2>
 
       {% for item in submission.workflow_results %}
-        <article class="glass rounded-4xl p-4 mb-3 border-l-4 border-primary">
+        <article class="glass rounded-3xl p-4 mb-3 border-l-4 border-primary">
           <p class="text-white font-semibold">{{ item.stage_id }}</p>
           <p class="text-white/60 text-sm mb-1">{{ item.status }}</p>
           <p class="text-white/50 text-xs mb-2">{{ item.started_at_display }} → {{ item.finished_at_display }}</p>
@@ -306,12 +318,20 @@
 </section>
 
 <style>
-  textarea {
+  textarea,
+  select {
     font-family: 'Instrument Sans', system-ui, sans-serif;
+    caret-color: white;
+    cursor: pointer;
   }
 
   textarea::placeholder {
     color: rgba(255, 255, 255, 0.4);
+  }
+
+  select option {
+    background: #000;
+    color: white;
   }
 </style>
 {% endblock %}

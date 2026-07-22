@@ -9,7 +9,7 @@
 
   <div class="relative z-10 w-full max-w-md mx-auto px-6">
     <!-- Login Card -->
-    <div class="glass-strong rounded-4xl p-8 md:p-10 fade-in">
+    <div class="glass-strong rounded-3xl p-8 md:p-10 fade-in">
       <!-- Icon -->
       <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6 border ">
         <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,22 +79,42 @@
   input[type="email"] {
     width: 100%;
     padding: 14px 18px;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: 9999px;
     color: white;
     font-size: 16px;
     transition: all 0.3s ease;
-    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-family: 'Instrument Sans', system-ui, sans-serif !important;
+    caret-color: white;
   }
 
   input[type="text"]:focus,
   input[type="password"]:focus,
   input[type="email"]:focus {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: #3054ff;
+    border-color: #8b5cf6;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(48, 84, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: white !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    font-family: 'Instrument Sans', system-ui, sans-serif !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  .errorlist,
+  form > div[class*="bg-red"] {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 9999px;
+    padding: 12px 16px;
+    color: #fca5a5;
+    list-style: none;
+    margin: 0;
   }
 
   input[type="text"]::placeholder,
