@@ -160,9 +160,6 @@
           <button type="submit" name="decision" value="return_to_author" {% if not available_decisions.return_to_author %}disabled{% endif %} class="px-4 py-3 rounded-full glass-strong hover:glass text-white font-medium transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed">
             Отправить на доработку
           </button>
-          <button type="submit" name="decision" value="postpone" {% if not available_decisions.postpone %}disabled{% endif %} class="px-4 py-3 rounded-full glass-strong hover:glass text-white/70 font-medium transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed">
-            Отложить решение
-          </button>
           {% if available_decisions.include_in_issue %}
           <button type="submit" name="decision" value="include_in_issue" class="px-4 py-3 rounded-full bg-primary/20 hover:bg-primary/30 text-primary-light font-medium border  transition-all duration-300">
             Включить в выпуск
