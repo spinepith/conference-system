@@ -113,7 +113,28 @@ def index(request: HttpRequest):
         )
         for row in submissions:
             row["status_label"] = STATUS_LABELS.get(row["status"], row["status"])
-    return render(request, "index.html", {"submissions": submissions})
+
+    # Get current active conference/issue
+    current_issue = None
+    try:
+        from tema.editorial.models import Issue
+        from django.db.models import Count
+        # Get the most recent issue that is not closed
+        current_issue = Issue.objects.filter(
+            status__in=['open', 'active', 'draft']
+        ).order_by('-year', '-quarter').first()
+
+        if current_issue:
+            # Count submissions for this issue
+            submissions_count = Submission.objects.filter(issue_id=current_issue.issue_id).count()
+            current_issue.submissions_count = submissions_count
+    except Exception:
+        pass
+
+    return render(request, "index.html", {
+        "submissions": submissions,
+        "current_issue": current_issue,
+    })
 
 
 @login_required

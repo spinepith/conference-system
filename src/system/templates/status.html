@@ -1,127 +1,302 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 
-{% block title %}{{ submission.submission_id }}{% endblock %}
+{% block title %}{{ submission.submission_id }} — Conference System{% endblock %}
 
 {% block content %}
-<section class="card">
-  <div class="section-title">
-    <div>
-      <h1>Заявка <code>{{ submission.submission_id }}</code></h1>
-      <p class="muted">Создана: {{ submission.created_at|date:'d.m.Y H:i' }}</p>
+<!-- Header Section -->
+<section class="max-w-7xl mx-auto px-6 py-12">
+  <div class="glass-strong rounded-4xl p-8 md:p-12 fade-in">
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
+      <div>
+        <div class="flex items-center gap-3 mb-3">
+          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <h1 class="text-3xl font-bold text-white">Заявка <code class="text-primary-light">{{ submission.submission_id }}</code></h1>
+        </div>
+        <p class="text-white/60">Создана: {{ submission.created_at|date:'d.m.Y H:i' }}</p>
+      </div>
+      <span class="inline-block px-6 py-3 rounded-full text-lg font-semibold bg-primary/20 text-primary-light border ">
+        {{ status_label }}
+      </span>
     </div>
-    <span class="status big">{{ status_label }}</span>
-  </div>
 
-  <div class="grid two">
-    <div>
-      <h3>Автор</h3>
-      <p><b>ФИО:</b> {{ submission.author_contact.full_name|default:'—' }}</p>
-      <p><b>E-mail:</b> {{ submission.author_contact.email|default:'—' }}</p>
-      <p><b>Организация:</b> {{ submission.author_contact.organization|default:'—' }}</p>
-    </div>
-    <div>
-      <h3>Материал</h3>
-      <p><b>Название:</b> {{ submission.metadata.title_ru|default:'—' }}</p>
-      <p><b>Секция:</b> {{ submission.metadata.section|default:'—' }}</p>
-      <p><b>Научный руководитель:</b> {{ submission.metadata.supervisor|default:'—' }}</p>
+    <!-- Two Column Info Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Author Info -->
+      <div class="glass rounded-4xl p-6">
+        <h3 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          Автор
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <span class="text-white/50 text-sm">ФИО:</span>
+            <p class="text-white">{{ submission.author_contact.full_name|default:'—' }}</p>
+          </div>
+          <div>
+            <span class="text-white/50 text-sm">E-mail:</span>
+            <p class="text-white">{{ submission.author_contact.email|default:'—' }}</p>
+          </div>
+          <div>
+            <span class="text-white/50 text-sm">Организация:</span>
+            <p class="text-white">{{ submission.author_contact.organization|default:'—' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Material Info -->
+      <div class="glass rounded-4xl p-6">
+        <h3 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
+          Материал
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <span class="text-white/50 text-sm">Название:</span>
+            <p class="text-white">{{ submission.metadata.title_ru|default:'—' }}</p>
+          </div>
+          <div>
+            <span class="text-white/50 text-sm">Секция:</span>
+            <p class="text-white">{{ submission.metadata.section|default:'—' }}</p>
+          </div>
+          <div>
+            <span class="text-white/50 text-sm">Научный руководитель:</span>
+            <p class="text-white">{{ submission.metadata.supervisor|default:'—' }}</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- Extracted Metadata Section -->
 {% if submission.metadata.extracted_metadata %}
-<section class="card">
-  <h2>Найденные системой данные</h2>
-  <div class="grid two">
-    <div>
-      <p><b>Название:</b> {{ submission.metadata.extracted_metadata.title|default:'—' }}</p>
-      <p><b>Организация:</b> {{ submission.metadata.extracted_metadata.organization|default:'—' }}</p>
-      <p><b>Авторы:</b> {{ submission.metadata.extracted_metadata.authors|join:', '|default:'—' }}</p>
-    </div>
-    <div>
-      <p><b>Разделов:</b> {{ submission.metadata.extracted_metadata.sections|length }}</p>
-      <p><b>Таблиц:</b> {{ submission.metadata.extracted_metadata.objects.tables_count|default:0 }}</p>
-      <p><b>Рисунков:</b> {{ submission.metadata.extracted_metadata.objects.figures_count|default:0 }}</p>
+<section class="max-w-7xl mx-auto px-6 py-6">
+  <div class="glass-strong rounded-4xl p-8 md:p-12">
+    <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+      <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      Найденные системой данные
+    </h2>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div class="space-y-3">
+        <div>
+          <span class="text-white/50 text-sm">Название:</span>
+          <p class="text-white">{{ submission.metadata.extracted_metadata.title|default:'—' }}</p>
+        </div>
+        <div>
+          <span class="text-white/50 text-sm">Организация:</span>
+          <p class="text-white">{{ submission.metadata.extracted_metadata.organization|default:'—' }}</p>
+        </div>
+        <div>
+          <span class="text-white/50 text-sm">Авторы:</span>
+          <p class="text-white">{{ submission.metadata.extracted_metadata.authors|join:', '|default:'—' }}</p>
+        </div>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <span class="text-white/50 text-sm">Разделов:</span>
+          <p class="text-white">{{ submission.metadata.extracted_metadata.sections|length }}</p>
+        </div>
+        <div>
+          <span class="text-white/50 text-sm">Таблиц:</span>
+          <p class="text-white">{{ submission.metadata.extracted_metadata.objects.tables_count|default:0 }}</p>
+        </div>
+        <div>
+          <span class="text-white/50 text-sm">Рисунков:</span>
+          <p class="text-white">{{ submission.metadata.extracted_metadata.objects.figures_count|default:0 }}</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 {% endif %}
 
-<section class="card">
-  <h2>Файлы</h2>
-  {% if author_files %}
-    <ul class="files-list">
-      {% for file in author_files %}
-        <li><span>{{ file.file_type }}</span><a href="{% url 'download_file' file.id %}">Скачать</a></li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="empty">Доступные файлы ещё не сформированы.</p>
-  {% endif %}
+<!-- Files Section -->
+<section class="max-w-7xl mx-auto px-6 py-6">
+  <div class="glass-strong rounded-4xl p-8 md:p-12">
+    <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+      <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+      </svg>
+      Файлы
+    </h2>
+
+    {% if author_files %}
+      <div class="space-y-3">
+        {% for file in author_files %}
+          <div class="glass rounded-4xl p-4 flex items-center justify-between gap-4 hover:bg-white/5 transition-colors duration-200">
+            <span class="text-white">{{ file.file_type }}</span>
+            <a href="{% url 'download_file' file.id %}" class="px-4 py-2 rounded-full bg-primary/20 hover:bg-primary/30 text-primary-light transition-all duration-300 font-medium inline-flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              Скачать
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-8">
+        <svg class="w-16 h-16 text-white/20 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <p class="text-white/60">Доступные файлы ещё не сформированы</p>
+      </div>
+    {% endif %}
+  </div>
 </section>
 
+<!-- Author Actions Section -->
 {% if submission.owner_id == user.id %}
-<section class="card">
-  <h2>Действия автора</h2>
-  {% if submission.status == 'needs_author_review' %}
-    <form method="post" action="{% url 'confirm_submission' submission.submission_id %}" class="inline-form">
-      {% csrf_token %}
-      <button class="button" type="submit">Подтвердить итоговый вариант</button>
-    </form>
-  {% endif %}
+<section class="max-w-7xl mx-auto px-6 py-6">
+  <div class="glass-strong rounded-4xl p-8 md:p-12">
+    <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+      <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+      </svg>
+      Действия автора
+    </h2>
 
-  {% if submission.status == 'needs_revision' or submission.status == 'needs_author_review' or submission.status == 'error' %}
-    <form method="post" action="{% url 'upload_revision' submission.submission_id %}" enctype="multipart/form-data" class="revision-form">
-      {% csrf_token %}
-      <label>Загрузить исправленную версию DOCX
-        <input type="file" name="revision_docx" accept=".docx" required>
-      </label>
-      <button class="button secondary" type="submit">Загрузить исправление</button>
-    </form>
-  {% endif %}
+    {% if submission.status == 'needs_author_review' %}
+      <form method="post" action="{% url 'confirm_submission' submission.submission_id %}" class="mb-6">
+        {% csrf_token %}
+        <button type="submit" class="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-semibold btn-glow">
+          Подтвердить итоговый вариант
+        </button>
+      </form>
+    {% endif %}
 
-  {% if submission.status != 'needs_author_review' and submission.status != 'needs_revision' and submission.status != 'error' %}
-    <p class="muted">Сейчас действий от автора не требуется.</p>
-  {% endif %}
+    {% if submission.status == 'needs_revision' or submission.status == 'needs_author_review' or submission.status == 'error' %}
+      <form method="post" action="{% url 'upload_revision' submission.submission_id %}" enctype="multipart/form-data" class="max-w-xl">
+        {% csrf_token %}
+        <label class="block text-white font-medium mb-3">
+          Загрузить исправленную версию DOCX
+        </label>
+        <div class="glass rounded-4xl p-4 border-dashed mb-4">
+          <input type="file" name="revision_docx" accept=".docx" required class="w-full">
+        </div>
+        <button type="submit" class="px-6 py-3 rounded-full glass-strong hover:glass transition-all duration-300 text-white font-semibold">
+          Загрузить исправление
+        </button>
+      </form>
+    {% endif %}
+
+    {% if submission.status != 'needs_author_review' and submission.status != 'needs_revision' and submission.status != 'error' %}
+      <div class="text-center py-8">
+        <svg class="w-16 h-16 text-white/20 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-white/60">Сейчас действий от автора не требуется</p>
+      </div>
+    {% endif %}
+  </div>
 </section>
 {% endif %}
 
-<section class="grid two">
-  <div class="card">
-    <h2>Результаты проверок</h2>
-    {% for check in submission.checks.all %}
-      <article class="check">
-        <h3>{{ check.title|default:check.check_id }}</h3>
-        <p><b>Статус:</b> {{ check.status }} | <b>Риск:</b> {{ check.risk_level }}</p>
-        <p>{{ check.summary|default:'Описание отсутствует.' }}</p>
-        {% if check.author_comment %}<p><b>Рекомендация:</b> {{ check.author_comment }}</p>{% endif %}
-        {% if check.warnings %}
-          <ul>
-            {% for warning in check.warnings %}
-              <li>
-                {% if warning.message %}{{ warning.message }}{% else %}{{ warning }}{% endif %}
-                {% if warning.recommendation %}<br><span class="muted">{{ warning.recommendation }}</span>{% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-      </article>
-    {% empty %}
-      <p class="empty">Результаты проверок ещё не готовы.</p>
-    {% endfor %}
-  </div>
+<!-- Two Column Section: Checks and History -->
+<section class="max-w-7xl mx-auto px-6 py-6 pb-20">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Checks Results -->
+    <div class="glass-strong rounded-4xl p-8">
+      <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+        </svg>
+        Результаты проверок
+      </h2>
 
-  <div class="card">
-    <h2>История обработки</h2>
-    <ul class="timeline">
-      {% for row in submission.status_history.all %}
-        <li>
-          <b>{{ row.comment|default:'Статус материала обновлён.' }}</b><br>
-          <span>{{ row.changed_at|date:'d.m.Y H:i' }}</span>
-        </li>
+      {% for check in submission.checks.all %}
+        <article class="glass rounded-4xl p-5 mb-4 border-l-4 border-primary">
+          <h3 class="text-lg font-semibold text-white mb-2">{{ check.title|default:check.check_id }}</h3>
+          <div class="flex gap-4 text-sm text-white/60 mb-3">
+            <span><b>Статус:</b> {{ check.status }}</span>
+            <span><b>Риск:</b> {{ check.risk_level }}</span>
+          </div>
+          <p class="text-white/70 mb-3">{{ check.summary|default:'Описание отсутствует.' }}</p>
+          {% if check.author_comment %}
+            <p class="text-primary-light"><b>Рекомендация:</b> {{ check.author_comment }}</p>
+          {% endif %}
+          {% if check.warnings %}
+            <ul class="mt-3 space-y-2">
+              {% for warning in check.warnings %}
+                <li class="text-white/70 text-sm">
+                  {% if warning.message %}{{ warning.message }}{% else %}{{ warning }}{% endif %}
+                  {% if warning.recommendation %}<br><span class="text-white/50 text-xs">{{ warning.recommendation }}</span>{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </article>
       {% empty %}
-        <li>История пока пуста.</li>
+        <div class="text-center py-8">
+          <svg class="w-16 h-16 text-white/20 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p class="text-white/60">Результаты проверок ещё не готовы</p>
+        </div>
       {% endfor %}
-    </ul>
+    </div>
+
+    <!-- Processing History -->
+    <div class="glass-strong rounded-4xl p-8">
+      <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        История обработки
+      </h2>
+
+      <ul class="space-y-4">
+        {% for row in submission.status_history.all %}
+          <li class="flex gap-4">
+            <div class="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+            <div class="flex-1">
+              <p class="text-white font-medium mb-1">{{ row.comment|default:'Статус материала обновлён.' }}</p>
+              <p class="text-white/50 text-sm">{{ row.changed_at|date:'d.m.Y H:i' }}</p>
+            </div>
+          </li>
+        {% empty %}
+          <li class="text-white/60 text-center py-8">История пока пуста</li>
+        {% endfor %}
+      </ul>
+    </div>
   </div>
 </section>
+
+<style>
+  input[type="file"] {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+  }
+
+  input[type="file"]::file-selector-button {
+    padding: 8px 16px;
+    background: rgba(48, 84, 255, 0.2);
+    border: 1px solid #3054ff;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-right: 12px;
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+  }
+
+  input[type="file"]::file-selector-button:hover {
+    background: rgba(48, 84, 255, 0.3);
+  }
+</style>
 {% endblock %}

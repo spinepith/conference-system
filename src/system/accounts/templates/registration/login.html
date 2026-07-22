@@ -1,17 +1,106 @@
-{% extends "base.html" %}
-{% block title %}Вход{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Вход — Conference System{% endblock %}
 {% block content %}
-<section class="card narrow auth-card">
-  <h1>Вход</h1>
-  <form method="post" class="form">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    {% for field in form %}
-      <label>{{ field.label }}{{ field }}{{ field.errors }}</label>
-    {% endfor %}
-    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-    <button class="button" type="submit">Войти</button>
-  </form>
-  <p>Нет аккаунта автора? <a href="{% url 'accounts:register' %}">Зарегистрироваться</a></p>
+<!-- Login Section -->
+<section class="relative w-full min-h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden py-20">
+  <!-- Background Gradients -->
+  <div class="absolute inset-0 overflow-hidden">
+    </div>
+
+  <div class="relative z-10 w-full max-w-md mx-auto px-6">
+    <!-- Login Card -->
+    <div class="glass-strong rounded-4xl p-8 md:p-10 fade-in">
+      <!-- Icon -->
+      <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6 border ">
+        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-3xl font-bold text-white text-center mb-2">Вход в систему</h1>
+      <p class="text-white/60 text-center mb-8">Войдите в свой аккаунт автора</p>
+
+      <!-- Form -->
+      <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="bg-red-500/10 border  rounded-full p-4 text-red-300 text-sm">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        {% for field in form %}
+          <div class="form-group">
+            <label class="block text-white font-medium mb-2">
+              {{ field.label }}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+              <div class="mt-2 text-red-300 text-sm">{{ field.errors }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+
+        {% if next %}
+          <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+
+        <button type="submit" class="w-full px-6 py-4 rounded-full bg-primary hover:bg-primary-dark transition-all duration-500 text-white font-semibold text-lg btn-glow transform hover:scale-[1.02]">
+          Войти
+        </button>
+      </form>
+
+      <!-- Register Link -->
+      <div class="mt-8 pt-6 border-t border-white/10 text-center">
+        <p class="text-white/60">
+          Нет аккаунта автора?
+          <a href="{% url 'accounts:register' %}" class="text-primary hover:text-primary-light transition-colors duration-300 font-medium">
+            Зарегистрироваться
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-6 text-center">
+      <p class="text-white/50 text-sm">
+        Редакторские учётные записи создаются администратором системы
+      </p>
+    </div>
+  </div>
 </section>
+
+<style>
+  /* Form Input Styles */
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+  }
+
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  input[type="email"]:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #3054ff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(48, 84, 255, 0.1);
+  }
+
+  input[type="text"]::placeholder,
+  input[type="password"]::placeholder,
+  input[type="email"]::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+</style>
 {% endblock %}

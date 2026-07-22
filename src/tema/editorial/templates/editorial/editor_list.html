@@ -1,18 +1,134 @@
-{% extends "base.html" %}
-{% block title %}Редакторская панель{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Редакторская панель — Conference System{% endblock %}
 {% block content %}
-<section class="hero"><h1>Редакторская панель</h1><p>Заявки, автоматические проверки, файлы и решения редактора.</p></section>
-<section class="card">
-<form class="filters" method="get">
-<label>Выпуск<select name="issue_id"><option value="">Все выпуски</option>{% for issue in issues %}<option value="{{ issue.issue_id }}" {% if filter_issue_id == issue.issue_id %}selected{% endif %}>{{ issue.title }} ({{ issue.year }} Q{{ issue.quarter }})</option>{% endfor %}</select></label>
-<label>Статус<select name="status"><option value="">Все статусы</option>{% for value in statuses %}<option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
-<label>Автор или название<input name="q" value="{{ filter_q }}" placeholder="Введите строку поиска"></label>
-<div><button class="button" type="submit">Найти</button> <a class="button muted-button" href="{% url 'editorial:editor_list' %}">Сбросить</a></div>
-</form>
+
+<!-- Hero Section -->
+<section class="relative w-full py-20 overflow-hidden">
+  <!-- Background Gradients -->
+  <div class="absolute inset-0 overflow-hidden">
+    </div>
+
+  <div class="relative z-10 max-w-7xl mx-auto px-6">
+    <div class="text-center mb-12 fade-in">
+      <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4">Редакторская панель</h1>
+      <p class="text-white/60 text-lg">Заявки, автоматические проверки, файлы и решения редактора</p>
+    </div>
+  </div>
 </section>
-<section class="card">
-{% if submissions %}<div class="table-scroll"><table><thead><tr><th>Номер</th><th>Название</th><th>Автор</th><th>Выпуск</th><th>Статус</th><th>Риск</th><th>Обновлено</th></tr></thead><tbody>
-{% for item in submissions %}<tr><td><a href="{% url 'editorial:editor_card' item.submission_id %}"><code>{{ item.submission_id }}</code></a></td><td>{{ item.metadata.title_ru|default:'—' }}</td><td>{{ item.author_contact.full_name|default:'—' }}</td><td>{{ item.issue_id }}</td><td><span class="status">{{ item.status }}</span></td><td>{{ item.overall_risk|default:'нет проверок' }}</td><td>{{ item.updated_at }}</td></tr>{% endfor %}
-</tbody></table></div>{% else %}<p class="empty">Заявок не найдено.</p>{% endif %}
+
+<!-- Filters Section -->
+<section class="max-w-7xl mx-auto px-6 py-6">
+  <div class="glass-strong rounded-4xl p-8">
+    <form method="get">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Issue Filter -->
+        <div class="form-group">
+          <label class="block text-white font-medium mb-2">Выпуск</label>
+          <select name="issue_id" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
+            <option value="">Все выпуски</option>
+            {% for issue in issues %}
+              <option value="{{ issue.issue_id }}" {% if filter_issue_id == issue.issue_id %}selected{% endif %}>
+                {{ issue.title }} ({{ issue.year }} Q{{ issue.quarter }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="form-group">
+          <label class="block text-white font-medium mb-2">Статус</label>
+          <select name="status" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
+            <option value="">Все статусы</option>
+            {% for value in statuses %}
+              <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Search Filter -->
+        <div class="form-group">
+          <label class="block text-white font-medium mb-2">Автор или название</label>
+          <input type="text" name="q" value="{{ filter_q }}" placeholder="Введите строку поиска" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-4">
+        <button type="submit" class="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-semibold btn-glow">
+          Найти
+        </button>
+        <a href="{% url 'editorial:editor_list' %}" class="px-6 py-3 rounded-full glass-strong hover:glass transition-all duration-300 text-white font-semibold">
+          Сбросить
+        </a>
+      </div>
+    </form>
+  </div>
 </section>
+
+<!-- Submissions Table -->
+<section class="max-w-7xl mx-auto px-6 py-6 pb-20">
+  <div class="glass-strong rounded-4xl p-8 md:p-12">
+    {% if submissions %}
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-white/10">
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Номер</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Название</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Автор</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Выпуск</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Статус</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Риск</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Обновлено</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in submissions %}
+            <tr class="border-b border-white/5 hover:bg-white/5 transition-colors duration-200">
+              <td class="py-4 px-4">
+                <a href="{% url 'editorial:editor_card' item.submission_id %}" class="text-primary hover:text-primary-light transition-colors duration-200 font-mono">
+                  <code class="text-primary-light bg-primary/20 px-3 py-1 rounded-full text-sm">{{ item.submission_id }}</code>
+                </a>
+              </td>
+              <td class="py-4 px-4 text-white">{{ item.metadata.title_ru|default:'—' }}</td>
+              <td class="py-4 px-4 text-white/80">{{ item.author_contact.full_name|default:'—' }}</td>
+              <td class="py-4 px-4 text-white/80">{{ item.issue_id }}</td>
+              <td class="py-4 px-4">
+                <span class="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-primary/20 text-primary-light border ">
+                  {{ item.status }}
+                </span>
+              </td>
+              <td class="py-4 px-4 text-white/80">{{ item.overall_risk|default:'нет проверок' }}</td>
+              <td class="py-4 px-4 text-white/60 text-sm">{{ item.updated_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-16">
+        <svg class="w-20 h-20 text-white/20 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <p class="text-white/60 text-lg">Заявок не найдено</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+  select {
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    cursor: pointer;
+  }
+
+  select option {
+    background: #000;
+    color: white;
+  }
+
+  input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+</style>
 {% endblock %}
