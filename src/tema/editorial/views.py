@@ -286,6 +286,17 @@ def issue_build(request: HttpRequest, issue_id: str):
     return redirect("editorial:issue_detail", issue_id=issue_id)
 
 
+@editor_required
+@require_POST
+def issue_delete(request: HttpRequest, issue_id: str):
+    try:
+        issue_service.delete_issue(issue_id)
+        messages.success(request, f"Выпуск {issue_id} удалён из архива.")
+    except (KeyError, ValueError) as exc:
+        messages.error(request, str(exc))
+    return redirect("editorial:issue_list")
+
+
 def _visible_issue_or_404(request: HttpRequest, issue_id: str) -> dict:
     try:
         issue = issue_service.issue_to_dict(issue_id)

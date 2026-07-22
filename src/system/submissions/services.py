@@ -254,13 +254,13 @@ class SubmissionService:
         return self.get_submission(submission_id)
 
     def create_submission_from_form(
-        self, cleaned: dict[str, Any], uploaded_file: UploadedFile, owner=None
+        self, cleaned: dict[str, Any], uploaded_file: UploadedFile, owner=None, issue_id: str | None = None
     ) -> dict[str, Any]:
         organization = clean_organization_name(cleaned.get("organization") or "")
         authors = cleaned.get("authors_json") or []
         data = {
             "conference_id": settings.CONFERENCE_DEFAULT_ID,
-            "issue_id": settings.ISSUE_DEFAULT_ID,
+            "issue_id": issue_id or settings.ISSUE_DEFAULT_ID,
             "author_contact": {
                 "full_name": cleaned["full_name"],
                 "email": cleaned["email"],

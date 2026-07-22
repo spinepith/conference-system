@@ -109,6 +109,23 @@
               <div class="mt-2 text-red-300 text-sm">{{ form.section.errors }}</div>
             {% endif %}
           </div>
+
+          {% if show_issue_choice %}
+          <!-- Issue Selection -->
+          <div class="form-group">
+            <label class="block text-white font-medium mb-2">
+              {{ form.issue_id.label }}
+              <span class="text-red-400">*</span>
+            </label>
+            {{ form.issue_id }}
+            <p class="mt-2 text-white/50 text-sm">Выберите выпуск, в который вы хотите подать материал</p>
+            {% if form.issue_id.errors %}
+              <div class="mt-2 text-red-300 text-sm">{{ form.issue_id.errors }}</div>
+            {% endif %}
+          </div>
+          {% else %}
+            {{ form.issue_id }}
+          {% endif %}
         </div>
 
         <div class="h-px bg-white/10"></div>

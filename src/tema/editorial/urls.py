@@ -21,6 +21,7 @@ urlpatterns = [
         name="issue_remove_submission",
     ),
     path("editor/issues/<str:issue_id>/build/", views.issue_build, name="issue_build"),
+    path("editor/issues/<str:issue_id>/delete/", views.issue_delete, name="issue_delete"),
 
     path("editor/", views.editor_list, name="editor_list"),
     path("editor/<str:submission_id>/decision/", views.editor_decision, name="editor_decision"),

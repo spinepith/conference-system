@@ -145,22 +145,39 @@ def submit_material(request: HttpRequest):
         return redirect("index")
     svc = service()
     svc.ensure_defaults()
+
+    # Получаем список активных выпусков
+    from submissions.models import Issue
+    active_issues = Issue.objects.filter(
+        extras__status__in=["draft", "open"]
+    ).select_related("extras").order_by("-year", "-quarter")
+
+    # Если выпусков больше 2, показываем выбор
+    issue_choices = None
+    if active_issues.count() > 2:
+        issue_choices = [(issue.issue_id, f"{issue.title} ({issue.year} Q{issue.quarter})") for issue in active_issues]
+
     initial = {
         "full_name": _display_name(request.user),
         "email": request.user.email,
     }
+
     if request.method == "POST":
-        form = SubmissionForm(request.POST, request.FILES)
+        form = SubmissionForm(request.POST, request.FILES, issue_choices=issue_choices)
         if form.is_valid():
+            # Если выбор выпуска был, используем его, иначе дефолтный
+            issue_id = form.cleaned_data.get("issue_id") or settings.ISSUE_DEFAULT_ID
             submission = svc.create_submission_from_form(
                 form.cleaned_data,
                 form.cleaned_data["docx_file"],
                 owner=request.user,
+                issue_id=issue_id,
             )
             return redirect("status", submission_id=submission["submission_id"])
     else:
-        form = SubmissionForm(initial=initial)
-    return render(request, "submit.html", {"form": form})
+        form = SubmissionForm(initial=initial, issue_choices=issue_choices)
+
+    return render(request, "submit.html", {"form": form, "show_issue_choice": issue_choices is not None})
 
 
 @login_required

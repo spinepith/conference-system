@@ -267,3 +267,31 @@ def build_issue_collection(issue_id: str) -> dict[str, Any]:
         "archive_page": project_path_reference(archive_path),
         "issue": issue_to_dict(issue_id),
     }
+
+
+@transaction.atomic
+def delete_issue(issue_id: str) -> None:
+    """Удаляет выпуск из архива вместе с файлами."""
+    import shutil
+
+    issue = _get_issue_row(issue_id)
+
+    # Проверяем, есть ли материалы в статусе published или included_in_issue
+    included_count = Submission.objects.filter(
+        issue_id=issue_id,
+        status__in={"included_in_issue", "published"}
+    ).count()
+
+    if included_count > 0:
+        raise ValueError(
+            f"Невозможно удалить выпуск: в нём есть {included_count} материал(ов) "
+            "в статусе 'included_in_issue' или 'published'. Сначала исключите материалы из выпуска."
+        )
+
+    # Удаляем директорию с файлами выпуска
+    issue_dir = get_issues_dir(issue_id)
+    if issue_dir.exists():
+        shutil.rmtree(issue_dir)
+
+    # Удаляем запись из БД (extras удалится автоматически через CASCADE)
+    issue.delete()
