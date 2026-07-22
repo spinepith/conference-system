@@ -109,7 +109,9 @@ class ConferenceSystemTests(TestCase):
 
     def test_new_organization_is_saved(self):
         submission = self.create_submission()
-        self.assertTrue(Submission.objects.filter(pk=submission["submission_id"]).exists())
+        created = Submission.objects.get(pk=submission["submission_id"])
+        self.assertTrue(created.access_token)
+        self.assertLessEqual(len(created.access_token), 64)
         self.assertTrue(Organization.objects.filter(name="Новая тестовая организация").exists())
 
     def test_api_submissions_list(self):
