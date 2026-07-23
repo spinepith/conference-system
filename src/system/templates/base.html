@@ -1,0 +1,342 @@
+{% load static %}
+<!doctype html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Conference System{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Instrument Sans', 'system-ui', 'sans-serif'],
+            serif: ['Instrument Serif', 'Georgia', 'serif'],
+          },
+          colors: {
+            primary: '#8b5cf6',
+            'primary-dark': '#7c3aed',
+            'primary-light': '#a78bfa',
+            accent: '#ec4899',
+            'accent-dark': '#db2777',
+          },
+          borderRadius: {
+            '4xl': '2rem',
+            '5xl': '2.5rem',
+            '3xl': '1.5rem',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Instrument Sans', system-ui, sans-serif;
+      background: #000000;
+      color: rgba(255, 255, 255, 0.8);
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* Video Background with Parallax */
+    #video-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 120vh;
+      z-index: -1;
+      overflow: hidden;
+      transform: translateY(0);
+    }
+
+    #video-background video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.4;
+    }
+
+    /* Subtle overlay for readability */
+    #video-background::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    /* Liquid Glass Effect */
+    .glass {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04);
+      position: relative;
+    }
+
+    .glass::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .glass-strong {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+      backdrop-filter: blur(30px) saturate(200%);
+      -webkit-backdrop-filter: blur(30px) saturate(200%);
+      box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.1),
+        inset 0 2px 0 0 rgba(255, 255, 255, 0.1),
+        inset 0 -2px 0 0 rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+
+    .glass-strong::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: inherit;
+      padding: 1.5px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .btn-glow:hover {
+      box-shadow: 0 0 30px rgba(139, 92, 246, 0.6);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in {
+        animation: none;
+      }
+      #video-background {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Video Background -->
+  <div id="video-background">
+    <video autoplay muted loop playsinline>
+      <source src="https://videos.pexels.com/video-files/3129957/3129957-uhd_2560_1440_25fps.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- Fixed Navigation with minimal height -->
+  <nav class="fixed top-4 left-4 right-4 z-50 glass rounded-full">
+    <div class="max-w-7xl mx-auto px-4 py-1">
+      <div class="flex items-center justify-between gap-8">
+        <!-- Logo/Brand -->
+        <a href="{% url 'index' %}" class="flex items-center gap-2 text-white font-semibold text-lg hover:text-primary transition-colors duration-300">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+          </svg>
+          <span class="hidden sm:inline text-base">Conference System</span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center gap-4 text-sm">
+          <a href="{% url 'editorial:archive_index' %}" class="text-white/70 hover:text-white transition-colors duration-300">Архив</a>
+
+          {% if user.is_authenticated %}
+              {% if not is_editor_role %}
+                <a href="{% url 'index' %}" class="text-white/70 hover:text-white transition-colors duration-300">Мои материалы</a>
+                <a href="{% url 'submit' %}" class="text-white/70 hover:text-white transition-colors duration-300">Подать материал</a>
+              {% endif %}
+
+            {% if is_editor_role %}
+              <a href="{% url 'editorial:editor_list' %}" class="text-white/70 hover:text-white transition-colors duration-300">Редактор</a>
+              <a href="{% url 'editorial:issue_list' %}" class="text-white/70 hover:text-white transition-colors duration-300">Выпуски</a>
+              <a href="{% url 'api_index' %}" class="text-white/70 hover:text-white transition-colors duration-300">API</a>
+            {% endif %}
+
+            {% if user.is_staff %}
+              <a href="/admin/" class="text-white/70 hover:text-white transition-colors duration-300">Админка</a>
+            {% endif %}
+
+            <div class="flex items-center gap-3 ml-3 pl-3 border-l border-white/10">
+              <span class="text-white/50 text-xs">{{ user.get_full_name|default:user.username }}</span>
+              <form method="post" action="{% url 'accounts:logout' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="px-3 py-1.5 rounded-full glass hover:glass-strong transition-all duration-300 text-white/70 hover:text-white text-xs">
+                  Выйти
+                </button>
+              </form>
+            </div>
+          {% else %}
+            <a href="{% url 'accounts:login' %}" class="text-white/70 hover:text-white transition-colors duration-300">Войти</a>
+            <a href="{% url 'accounts:register' %}" class="px-4 py-1.5 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-medium btn-glow">
+              Регистрация
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="md:hidden text-white p-1" aria-label="Toggle menu">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile Navigation -->
+      <div id="mobile-menu" class="hidden md:hidden mt-3 pt-3 border-t border-white/10">
+        <div class="flex flex-col gap-2">
+          <a href="{% url 'editorial:archive_index' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Архив</a>
+
+          {% if user.is_authenticated %}
+           {% if not is_editor_role %}
+              <a href="{% url 'index' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Мои материалы</a>
+              <a href="{% url 'submit' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Подать материал</a>
+            {% endif %}
+
+            {% if is_editor_role %}
+              <a href="{% url 'editorial:editor_list' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Редактор</a>
+              <a href="{% url 'editorial:issue_list' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Выпуски</a>
+              <a href="{% url 'api_index' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">API</a>
+            {% endif %}
+
+            {% if user.is_staff %}
+              <a href="/admin/" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Админка</a>
+            {% endif %}
+
+            <div class="pt-2 mt-2 border-t border-white/10">
+              <span class="text-white/50 text-xs block mb-2">{{ user.get_full_name|default:user.username }}</span>
+              <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="w-full px-3 py-1.5 rounded-full glass hover:glass-strong transition-all duration-300 text-white/70 hover:text-white text-xs">
+                  Выйти
+                </button>
+              </form>
+            </div>
+          {% else %}
+            <a href="{% url 'accounts:login' %}" class="text-white/70 hover:text-white transition-colors duration-300 py-1.5 text-sm">Войти</a>
+            <a href="{% url 'accounts:register' %}" class="px-4 py-1.5 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-medium text-center btn-glow text-sm">
+              Регистрация
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="pt-20">
+    <!-- Messages -->
+    {% if messages %}
+      <div class="max-w-7xl mx-auto px-6 mt-6">
+        {% for message in messages %}
+          <div class="glass-strong rounded-full p-4 mb-4 fade-in {% if message.tags == 'success' %}bg-green-500/10{% elif message.tags == 'error' %}bg-red-500/10{% else %}bg-primary/10{% endif %}">
+            <p class="text-white text-center">{{ message }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer with minimal height -->
+  <footer class="mt-24 mb-4 mx-4 glass rounded-3xl">
+    <div class="max-w-7xl mx-auto px-6 py-3">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-3">
+        <div>
+          <h3 class="text-white font-semibold mb-1 text-sm">О системе</h3>
+          <p class="text-white/60 text-xs">Автоматизированная система управления материалами научных конференций.</p>
+        </div>
+        <div>
+          <h3 class="text-white font-semibold mb-1 text-sm">Навигация</h3>
+          <ul class="space-y-1 text-xs">
+            <li><a href="{% url 'index' %}" class="text-white/60 hover:text-white transition-colors duration-300">Главная</a></li>
+            <li><a href="{% url 'editorial:archive_index' %}" class="text-white/60 hover:text-white transition-colors duration-300">Архив</a></li>
+            {% if not is_editor_role %}
+              <li><a href="{% url 'submit' %}" class="text-white/60 hover:text-white transition-colors duration-300">Подать материал</a></li>
+            {% endif %}
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-white font-semibold mb-1 text-sm">Контакты</h3>
+          <p class="text-white/60 text-xs">По вопросам обращайтесь к администратору.</p>
+        </div>
+      </div>
+      <div class="pt-3 border-t border-white/10 text-center text-white/50 text-xs">
+        <p>&copy; 2026 Conference System. Все права защищены.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (mobileMenuBtn && mobileMenu) {
+      mobileMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+    }
+
+    // Parallax effect on video background
+    if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      const videoBackground = document.getElementById('video-background');
+      let ticking = false;
+
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            const scrolled = window.pageYOffset;
+            const parallaxSpeed = -0.5;
+            videoBackground.style.transform = `translateY(${scrolled * parallaxSpeed}px)`;
+            ticking = false;
+          });
+          ticking = true;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

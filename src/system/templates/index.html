@@ -1,0 +1,376 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Главная — Conference System{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative w-full min-h-[85vh] flex items-center justify-center overflow-hidden">
+  <!-- Hero Content -->
+  <div class="relative z-10 max-w-5xl mx-auto px-6 text-center fade-in">
+    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-tight text-white mb-6">
+      Автоматизированная система управления материалами конференции
+    </h1>
+    <p class="text-lg sm:text-xl text-white/70 max-w-3xl mx-auto mb-12 leading-relaxed">
+      Подача материалов, автоматическая обработка, согласование с автором и финальное решение редактора. Современная платформа для организации научных мероприятий.
+    </p>
+
+    <!-- CTA Buttons -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+      {% if user.is_authenticated %}
+        {% if not is_editor_role %}
+          <a href="{% url 'submit' %}" class="w-full sm:w-auto px-8 py-4 rounded-full bg-primary hover:bg-primary-dark transition-all duration-500 text-white font-semibold text-lg btn-glow transform hover:scale-105">
+            Подать материал
+          </a>
+        {% endif %}
+        {% if is_editor_role %}
+          <a href="{% url 'editorial:editor_list' %}" class="w-full sm:w-auto px-8 py-4 rounded-full bg-primary hover:bg-primary-dark transition-all duration-500 text-white font-semibold text-lg btn-glow transform hover:scale-105">
+            Редакторская панель
+          </a>
+        {% endif %}
+      {% else %}
+        <a href="{% url 'accounts:register' %}" class="w-full sm:w-auto px-8 py-4 rounded-full bg-primary hover:bg-primary-dark transition-all duration-500 text-white font-semibold text-lg btn-glow transform hover:scale-105">
+          Зарегистрироваться
+        </a>
+        <a href="{% url 'accounts:login' %}" class="w-full sm:w-auto px-8 py-4 rounded-full glass-strong hover:glass transition-all duration-500 text-white font-semibold text-lg">
+          Войти в систему
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Scroll Indicator -->
+  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+    <svg class="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+    </svg>
+  </div>
+</section>
+
+<!-- Available Issues Block -->
+{% if available_issues %}
+<section class="max-w-7xl mx-auto px-6 py-12">
+  <div class="glass-strong rounded-3xl p-8 md:p-12 fade-in">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-3 h-3 rounded-full bg-green-400 animate-pulse"></div>
+      <h2 class="text-3xl font-bold text-white">Доступные выпуски</h2>
+    </div>
+    <p class="text-white/60 mb-8">Выберите выпуск для подачи вашего материала</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for issue in available_issues %}
+        <div class="glass rounded-3xl p-6 hover:bg-white/10 transition-all duration-300">
+          <h3 class="text-xl font-bold text-white mb-3">{{ issue.title }}</h3>
+          <div class="flex flex-wrap items-center gap-4 text-sm text-white/60 mb-4">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              <span>{{ issue.year }} / Q{{ issue.quarter }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <span>{{ issue.submissions_count|default:0 }} материалов</span>
+            </div>
+          </div>
+          {% if issue.extras.status %}
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-primary/20 text-primary-light border border-primary/30">
+              {{ issue.extras.status }}
+            </span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if user.is_authenticated and not is_editor_role %}
+      <div class="mt-8 text-center">
+        <a href="{% url 'submit' %}" class="inline-block px-8 py-4 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-semibold btn-glow">
+          Подать материал
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<!-- Features Section -->
+<section class="max-w-7xl mx-auto px-6 py-20">
+  <div class="text-center mb-16 fade-in">
+    <h2 class="text-4xl sm:text-5xl font-bold text-white mb-4">Возможности системы</h2>
+    <p class="text-white/60 text-lg max-w-2xl mx-auto">Полный цикл работы с материалами научных конференций</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Feature Card 1 -->
+    <article class="group glass-strong rounded-3xl p-8 hover:glass transition-all duration-500 hover: fade-in">
+      <div class="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary/30 transition-colors duration-300">
+        <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-3">Удобная подача материалов</h3>
+      <p class="text-white/60 leading-relaxed">Загрузка файлов DOCX, автоматическое заполнение метаданных, поддержка соавторов с автокомплитом организаций.</p>
+    </article>
+
+    <!-- Feature Card 2 -->
+    <article class="group glass-strong rounded-3xl p-8 hover:glass transition-all duration-500 hover: fade-in" style="animation-delay: 0.1s;">
+      <div class="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary/30 transition-colors duration-300">
+        <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-3">Автоматическая обработка</h3>
+      <p class="text-white/60 leading-relaxed">Извлечение данных из документов, проверка формата, автоматические уведомления на всех этапах.</p>
+    </article>
+
+    <!-- Feature Card 3 -->
+    <article class="group glass-strong rounded-3xl p-8 hover:glass transition-all duration-500 hover: fade-in" style="animation-delay: 0.2s;">
+      <div class="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary/30 transition-colors duration-300">
+        <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-3">Согласование с автором</h3>
+      <p class="text-white/60 leading-relaxed">Прозрачный процесс согласования правок, возможность повторной отправки, отслеживание статуса в реальном времени.</p>
+    </article>
+
+    <!-- Feature Card 4 -->
+    <article class="group glass-strong rounded-3xl p-8 hover:glass transition-all duration-500 hover: fade-in" style="animation-delay: 0.3s;">
+      <div class="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary/30 transition-colors duration-300">
+        <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-3">Редакторский контроль</h3>
+      <p class="text-white/60 leading-relaxed">Панель редактора для работы с материалами, финальное утверждение, управление выпусками сборника.</p>
+    </article>
+
+    <!-- Feature Card 5 -->
+    <article class="group glass-strong rounded-3xl p-8 hover:glass transition-all duration-500 hover: fade-in" style="animation-delay: 0.4s;">
+      <div class="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary/30 transition-colors duration-300">
+        <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-3">Формирование сборника</h3>
+      <p class="text-white/60 leading-relaxed">Автоматическая сборка электронного сборника, генерация PDF, архивирование выпусков.</p>
+    </article>
+
+    <!-- Feature Card 6 -->
+    <article class="group glass-strong rounded-3xl p-8 hover:glass transition-all duration-500 hover: fade-in" style="animation-delay: 0.5s;">
+      <div class="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary/30 transition-colors duration-300">
+        <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-3">Архив материалов</h3>
+      <p class="text-white/60 leading-relaxed">Публичный архив всех выпусков, удобный поиск и фильтрация, скачивание отдельных материалов.</p>
+    </article>
+  </div>
+</section>
+
+{% if user.is_authenticated and not is_editor_role %}
+<!-- My Submissions Section -->
+<section class="max-w-7xl mx-auto px-6 py-20">
+  <div class="glass-strong rounded-3xl p-8 md:p-12">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+      <div>
+        <h2 class="text-3xl font-bold text-white mb-2">Мои материалы</h2>
+        <p class="text-white/60">Всего заявок: <span class="text-primary font-semibold">{{ submissions|length }}</span></p>
+      </div>
+      <a href="{% url 'submit' %}" class="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-medium btn-glow">
+        + Подать новый материал
+      </a>
+    </div>
+
+    {% if submissions %}
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-white/10">
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Номер</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Название</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Организация</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm">Статус</th>
+              <th class="text-left text-white/70 font-medium py-4 px-4 text-sm"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in submissions %}
+            <tr class="border-b border-white/5 hover:bg-white/5 transition-colors duration-200">
+              <td class="py-4 px-4">
+                <code class="text-primary-light bg-primary/20 px-3 py-1 rounded-full text-sm font-mono">{{ item.submission_id }}</code>
+              </td>
+              <td class="py-4 px-4 text-white">{{ item.metadata.title_ru|default:'Без названия' }}</td>
+              <td class="py-4 px-4 text-white/60">{{ item.author_contact.organization|default:'—' }}</td>
+              <td class="py-4 px-4">
+                <span class="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-primary/20 text-primary-light border ">
+                  {{ item.status_label }}
+                </span>
+              </td>
+              <td class="py-4 px-4">
+                <a href="{% url 'status' item.submission_id %}" class="text-primary hover:text-primary-light transition-colors duration-200 font-medium inline-flex items-center gap-2">
+                  Открыть
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                  </svg>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-16">
+        <svg class="w-20 h-20 text-white/20 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <p class="text-white/60 text-lg mb-6">У вас пока нет заявок</p>
+        <a href="{% url 'submit' %}" class="inline-block px-6 py-3 rounded-full bg-primary hover:bg-primary-dark transition-all duration-300 text-white font-medium btn-glow">
+          Подать первый материал
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<!-- How It Works Section -->
+<section class="max-w-7xl mx-auto px-6 py-20">
+  <div class="text-center mb-16">
+    <h2 class="text-4xl sm:text-5xl font-bold text-white mb-4">Как это работает</h2>
+    <p class="text-white/60 text-lg max-w-2xl mx-auto">Простой и прозрачный процесс от подачи до публикации</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <!-- Step 1 -->
+    <div class="text-center fade-in">
+      <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4 border-2 border-primary">
+        <span class="text-2xl font-bold text-primary">1</span>
+      </div>
+      <h3 class="text-lg font-semibold text-white mb-2">Регистрация</h3>
+      <p class="text-white/60 text-sm">Создайте аккаунт автора за 1 минуту</p>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="text-center fade-in" style="animation-delay: 0.1s;">
+      <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4 border-2 border-primary">
+        <span class="text-2xl font-bold text-primary">2</span>
+      </div>
+      <h3 class="text-lg font-semibold text-white mb-2">Подача материала</h3>
+      <p class="text-white/60 text-sm">Загрузите документ и заполните метаданные</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="text-center fade-in" style="animation-delay: 0.2s;">
+      <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4 border-2 border-primary">
+        <span class="text-2xl font-bold text-primary">3</span>
+      </div>
+      <h3 class="text-lg font-semibold text-white mb-2">Обработка</h3>
+      <p class="text-white/60 text-sm">Автоматическая проверка и согласование</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="text-center fade-in" style="animation-delay: 0.3s;">
+      <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4 border-2 border-primary">
+        <span class="text-2xl font-bold text-primary">4</span>
+      </div>
+      <h3 class="text-lg font-semibold text-white mb-2">Публикация</h3>
+      <p class="text-white/60 text-sm">Включение в электронный сборник</p>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="max-w-4xl mx-auto px-6 py-20">
+  <div class="text-center mb-12">
+    <h2 class="text-4xl sm:text-5xl font-bold text-white mb-4">Часто задаваемые вопросы</h2>
+    <p class="text-white/60 text-lg">Ответы на популярные вопросы</p>
+  </div>
+
+  <div class="space-y-4" style="filter: drop-shadow(0 0 60px rgba(255, 255, 255, 0.015));">
+    <!-- FAQ Item 1 -->
+    <details class="group glass-strong rounded-3xl p-6 hover:glass transition-all duration-300">
+      <summary class="text-lg font-semibold text-white cursor-pointer flex items-center justify-between">
+        <span>Какие форматы файлов принимаются?</span>
+        <svg class="w-5 h-5 text-white/70 group-open:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </summary>
+      <p class="mt-4 text-white/70 leading-relaxed">
+        Система принимает документы только в формате DOCX (Microsoft Word). Файл должен содержать текст статьи, список авторов, аннотацию и ключевые слова согласно требованиям конференции.
+      </p>
+    </details>
+
+    <!-- FAQ Item 2 -->
+    <details class="group glass-strong rounded-3xl p-6 hover:glass transition-all duration-300">
+      <summary class="text-lg font-semibold text-white cursor-pointer flex items-center justify-between">
+        <span>Как добавить соавторов?</span>
+        <svg class="w-5 h-5 text-white/70 group-open:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </summary>
+      <p class="mt-4 text-white/70 leading-relaxed">
+        При заполнении формы подачи материала используйте кнопку "+ Добавить соавтора". Укажите ФИО, e-mail и организацию каждого соавтора. Порядок авторов будет сохранён в итоговой публикации.
+      </p>
+    </details>
+
+    <!-- FAQ Item 3 -->
+    <details class="group glass-strong rounded-3xl p-6 hover:glass transition-all duration-300">
+      <summary class="text-lg font-semibold text-white cursor-pointer flex items-center justify-between">
+        <span>Сколько времени занимает обработка?</span>
+        <svg class="w-5 h-5 text-white/70 group-open:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </summary>
+      <p class="mt-4 text-white/70 leading-relaxed">
+        Автоматическая обработка документа выполняется мгновенно. Согласование с автором и проверка редактором зависят от загруженности и обычно занимают от нескольких часов до нескольких дней.
+      </p>
+    </details>
+
+    <!-- FAQ Item 4 -->
+    <details class="group glass-strong rounded-3xl p-6 hover:glass transition-all duration-300">
+      <summary class="text-lg font-semibold text-white cursor-pointer flex items-center justify-between">
+        <span>Можно ли внести правки после отправки?</span>
+        <svg class="w-5 h-5 text-white/70 group-open:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </summary>
+      <p class="mt-4 text-white/70 leading-relaxed">
+        Да, если редактор запросил правки, вы получите уведомление и сможете загрузить исправленную версию документа через личный кабинет.
+      </p>
+    </details>
+
+    <!-- FAQ Item 5 -->
+    <details class="group glass-strong rounded-3xl p-6 hover:glass transition-all duration-300">
+      <summary class="text-lg font-semibold text-white cursor-pointer flex items-center justify-between">
+        <span>Как отследить статус моего материала?</span>
+        <svg class="w-5 h-5 text-white/70 group-open:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </summary>
+      <p class="mt-4 text-white/70 leading-relaxed">
+        После авторизации в разделе "Мои материалы" вы увидите актуальный статус всех ваших заявок. Также при изменении статуса вам придёт уведомление на указанный e-mail.
+      </p>
+    </details>
+  </div>
+</section>
+
+<!-- CTA Section -->
+{% if not user.is_authenticated %}
+<section class="max-w-5xl mx-auto px-6 py-20">
+  <div class="glass-strong rounded-3xl p-12 text-center">
+    <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Готовы начать?</h2>
+    <p class="text-white/70 text-lg mb-8 max-w-2xl mx-auto">
+      Присоединяйтесь к системе управления материалами конференции и упростите процесс публикации
+    </p>
+    <a href="{% url 'accounts:register' %}" class="inline-block px-8 py-4 rounded-full bg-primary hover:bg-primary-dark transition-all duration-500 text-white font-semibold text-lg btn-glow transform hover:scale-105">
+      Создать аккаунт бесплатно
+    </a>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
