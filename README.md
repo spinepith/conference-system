@@ -1,137 +1,330 @@
-# Conference System
+# Система управления научной конференцией
 
-Учебный репозиторий автоматизированной системы научной конференции.
+Автоматизированная система приёма, проверки, оформления и публикации материалов постоянно действующей научной конференции по искусственному интеллекту.
 
-## Структура
+## Реализованная функциональность
 
-```text
+Система обеспечивает полный цикл обработки материалов конференции:
+
+- **Приём материалов** — загрузка DOCX-файлов авторами через веб-интерфейс
+- **Извлечение структуры** — автоматический парсинг названия, авторов, аннотации, ключевых слов, текста и списка литературы
+- **Приведение к шаблону** — автоматическое форматирование материала по единому шаблону конференции
+- **Автоматические проверки** — 6 типов проверок с использованием LLM (тематическое соответствие, смысловая связность, научная структура, качество формулировок, персональные данные, недопустимое содержание)
+- **PDF-экспорт** — конвертация в PDF через LibreOffice
+- **Редакторская панель** — просмотр заявок, результатов проверок, принятие решений
+- **Управление выпусками** — создание квартальных выпусков, группировка по секциям
+- **Сборка сборника** — автоматическая генерация PDF-сборника выпуска с оглавлением
+- **Публичный архив** — веб-страница со списком выпусков и материалов
+- **Авторизация и роли** — разделение прав авторов и редакторов
+
+## Архитектура
+
+Система состоит из 4 независимых модулей:
+
+```
 conference-system/
-├── .env.example
 ├── src/
-│   ├── windows_start.bat       единый запуск Windows
-│   ├── system/                 модуль 1: Django-ядро и workflow
-│   ├── docx_processing/        модуль 2: DOCX-извлечение и форматирование
-│   ├── tema/                   модуль 3: PDF, редактор, выпуски и архив
-│   └── content-validation/
-├── storage/
-│   ├── submissions/            файлы заявок
-│   └── issues/                 сборники и страницы выпусков
-└── templates/                  общий DOCX-шаблон конференции
+│   ├── system/                    # Модуль 1: Django-ядро, workflow, база данных
+│   ├── docx_processing/           # Модуль 2: DOCX-извлечение и форматирование (Python)
+│   ├── tema/                      # Модуль 3: PDF-экспорт, редактор, выпуски (Python)
+│   └── content-validation/        # Модуль 4: Автоматические проверки (C# .NET 10)
+└── storage/
+    ├── submissions/               # Файлы материалов
+    ├── issues/                    # Сборники выпусков
+    └── templates/                 # DOCX-шаблон конференции
 ```
 
-## Workflow модулей 1–3
+## Workflow обработки материала
 
-```text
-extract_metadata
-→ format_to_template
-→ export_pdf_and_package
+```
+Загрузка DOCX автором
+↓
+Извлечение структуры (extract_metadata)
+↓
+Приведение к шаблону (format_to_template)
+↓
+Автоматические проверки (content_validation)
+↓
+Экспорт PDF и упаковка (export_pdf_and_package)
+↓
+Согласование автором
+↓
+Проверка редактором
+↓
+Включение в выпуск
+↓
+Сборка PDF-сборника
+↓
+Публикация в архиве
 ```
 
-После обработки заявки создаются:
+## Быстрый запуск (Windows)
 
-```text
-original.docx
-extracted_metadata.json
-formatted_material.docx
-formatting_report.json
-formatted_material.pdf
-result_manifest.json
-result_package.zip
+### Требования
+
+- Python 3.11+
+- .NET 10 SDK
+- LibreOffice (для PDF-экспорта)
+- Google Gemini API key
+
+### Автоматический запуск
+
+**Важно:** Перед первым запуском отредактируйте файл `.env` и укажите ваш Google Gemini API key в поле `API_KEY=`.
+
+```cmd
+src\windows_start.bat
 ```
 
-JSON-файлы являются служебными: они сохраняются для workflow и редактора, но не показываются автору заявки и не включаются в пользовательский ZIP. В `result_package.zip` попадают итоговые `formatted_material.docx`, `formatted_material.pdf` и, при наличии, `author_report.pdf|docx`.
+Скрипт автоматически:
+- Создаёт `.env` из `.env.example` (если отсутствует)
+- Создаёт виртуальное окружение Python
+- Устанавливает зависимости
+- Применяет миграции базы данных
+- Запускает ContentValidation.Api (порт 5100)
+- Запускает Django (порт 8000)
 
-## Быстрый запуск на Windows
+После запуска откройте браузер: **http://127.0.0.1:8000/**
 
-Откройте:
-
-```text
-src/windows_start.bat
-```
-
-Скрипт создаёт `.env` и `.venv`, устанавливает зависимости, применяет миграции и запускает сайт на `http://127.0.0.1:8000/`.
-
-Для PDF-экспорта должен быть установлен LibreOffice. Обычно `soffice.exe` находится автоматически. Для нестандартной установки укажите в корневом `.env`:
-
+**Примечание:** Если у вас не установлен LibreOffice или вы хотите временно отключить автоматические проверки, установите в `.env`:
 ```env
-SOFFICE_BIN_PATH=C:/Program Files/LibreOffice/program/soffice.exe
+CONTENT_VALIDATION_ENABLED=0
 ```
 
-## Ручной запуск
+### Ручной запуск
 
-```powershell
-Copy-Item .env.example .env
+```bash
+# Настройка окружения
+cp .env.example .env
+# Отредактируйте .env и укажите API_KEY
+
+# Создание виртуального окружения
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate
+
+# Установка зависимостей
 cd src/system
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
+
+# Инициализация базы данных
 python manage.py migrate
-python manage.py seed_initial_data
-python manage.py check
-python manage.py runserver
+python manage.py initialize_roles
+
+# Запуск
+cd ..
+python system/scripts/run_services.py
 ```
 
-## Интерфейсы
+## Настройка
 
-- `/` — интерфейс автора и список заявок;
-- `/editor/` — редакторская панель;
-- `/editor/issues/` — управление выпусками;
-- `/archive/` — архив выпусков;
-- `/admin/` — Django Admin;
-- `/api/` — API ядра.
-
-## Общий `.env`
-
-Все относительные пути считаются от корня репозитория:
+Создайте файл `.env` в корне проекта (используйте `.env.example` как образец):
 
 ```env
+# API ключ для Gemini
+API_KEY=your-gemini-api-key-here
+LLM_MODEL=gemini-3.1-flash-lite
+
+# Автоматические проверки
+CONTENT_VALIDATION_ENABLED=1
+CONTENT_VALIDATION_API_URL=http://127.0.0.1:5100
+CONTENT_VALIDATION_TIMEOUT=360
+
+# Django
+DJANGO_DEBUG=1
+DJANGO_SECRET_KEY=dev-only-conference-system-secret-key
+DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+
+# Пути (относительно корня репозитория)
 PATH_STORAGE=storage
 PATH_LOGS=storage/logs
-PATH_TEMPLATES=templates
-PATH_CONFERENCE_TEMPLATE=templates/conference_template_v1.docx
+PATH_TEMPLATES=storage/templates
+PATH_CONFERENCE_TEMPLATE=storage/templates/conference_template_v1.docx
+PATH_MODULE_CONTENT_VALIDATION=src/content-validation
 PATH_MODULE_DOCX_PROCESSING=src/docx_processing
 PATH_MODULE_SYSTEM=src/system
 PATH_MODULE_TEMA=src/tema
 ISSUES_STORAGE_DIR=storage/issues
-SOFFICE_BIN_PATH=
+
+# LibreOffice (для PDF)
+SOFFICE_BIN_PATH=C:/Program Files/LibreOffice/program/soffice.exe
+
+# Токен для внутренних API
+INTERNAL_API_TOKEN=change-me-to-a-long-random-token
 ```
 
-## Проверка
+## Интерфейсы
 
-```powershell
+- **http://127.0.0.1:8000/** — главная страница, подача материалов
+- **http://127.0.0.1:8000/editor/** — редакторская панель
+- **http://127.0.0.1:8000/editor/issues/** — управление выпусками
+- **http://127.0.0.1:8000/archive/** — публичный архив выпусков
+- **http://127.0.0.1:8000/admin/** — Django Admin
+- **http://127.0.0.1:8000/api/** — REST API
+- **http://127.0.0.1:5100/** — ContentValidation API (внутренний)
+
+## Создание пользователей
+
+### Создание редактора
+
+```bash
 cd src/system
-python manage.py check
-python manage.py makemigrations --check
-python manage.py test
+python manage.py createsuperuser
 ```
 
-Также доступна команда для критерия ТЗ «тестовый выпуск из 5 материалов»:
+Суперпользователь автоматически получает права редактора.
 
-```powershell
+### Регистрация автора
+
+Откройте **http://127.0.0.1:8000/accounts/register/** и зарегистрируйтесь через веб-форму. Новые пользователи автоматически попадают в группу "Authors".
+
+## Тестирование
+
+```bash
+cd src/system
+
+# Проверка конфигурации
+python manage.py check
+
+# Проверка миграций
+python manage.py makemigrations --check
+
+# Запуск тестов
+python manage.py test
+
+# Создание тестового выпуска (5 материалов)
 python manage.py create_test_issue
 ```
 
-Подробности модуля 3 находятся в `src/tema/README.md`.
+## Структура файлов материала
 
-## ContentValidation (модуль студента 4)
+После обработки в папке материала создаются:
 
-`src/windows_start.bat` запускает два сервиса под одним супервизором:
+```
+storage/submissions/SUB-2026-Q1-00001/
+├── original.docx                  # Исходный файл автора
+├── extracted_metadata.json        # Извлечённая структура
+├── formatted_material.docx        # Оформленный по шаблону
+├── formatted_material.pdf         # PDF версия
+├── formatting_report.json         # Отчёт форматирования
+├── result_manifest.json           # Манифест итоговых файлов
+├── result_package.zip             # ZIP для автора (DOCX + PDF)
+├── checks/                        # Результаты каждой проверки (6 файлов)
+├── check_result.json              # Итоговый отчёт проверок
+└── logs/                          # Логи валидации
+    ├── llm_calls.log
+    ├── validation.log
+    └── errors.log
+```
 
-- Django: `http://127.0.0.1:8000/`;
-- ContentValidation.Api: `http://127.0.0.1:5100/`.
+## Статусы материала
 
-Перед запуском установите .NET 10 SDK и заполните `API_KEY` в корневом `.env`.
-После формирования `extracted_metadata.json` workflow вызывает `POST /validate`,
-импортирует файлы из `checks/` в базу Django и регистрирует итоговый
-`check_result.json` как внутренний файл `check_report`. Автор видит понятные
-замечания в интерфейсе, но не получает служебные JSON-файлы.
+- `draft` — черновик
+- `uploaded` — файл загружен
+- `structure_extracted` — структура извлечена
+- `formatted` — приведён к шаблону
+- `auto_checking` — выполняются проверки
+- `auto_checked` — проверки завершены
+- `needs_author_review` — требует согласования автора
+- `author_confirmed` — автор подтвердил
+- `needs_revision` — требуется доработка
+- `editor_review` — на проверке редактора
+- `accepted` — принято
+- `rejected` — отклонено
+- `included_in_issue` — включено в выпуск
+- `published` — опубликовано
+- `error` — ошибка обработки
 
-Для временного запуска без модуля установите:
+## Автоматические проверки
+
+Модуль ContentValidation выполняет 6 параллельных проверок:
+
+1. **Тематическое соответствие** — соответствие теме конференции по ИИ
+2. **Смысловая проверка** — логическая связность, цель, методы, результаты
+3. **Научная структура** — наличие всех необходимых элементов научной работы
+4. **Качество формулировок** — ясность и точность изложения
+5. **Персональные данные** — email, телефоны, паспорта, СНИЛС, адреса (гибрид regex + LLM)
+6. **Недопустимое содержание** — призывы к незаконным действиям, дискриминация
+
+Результаты проверок носят рекомендательный характер. Финальное решение о публикации принимает редактор.
+
+## Отключение автоматических проверок
+
+Для временного отключения модуля ContentValidation установите в `.env`:
 
 ```env
 CONTENT_VALIDATION_ENABLED=0
 ```
 
-## Авторизация
+## Структура модулей
 
-В Django-модуле реализовано разделение ролей автора и редактора. Инструкция по миграциям, созданию групп и настройке внутреннего API находится в `src/system/README.md`.
+### Модуль 1: Django-ядро (src/system)
+
+- Управление заявками, авторами, организациями
+- Workflow и машина состояний
+- Хранение файлов и результатов проверок
+- История действий
+- REST API
+- Авторизация и разделение ролей
+
+### Модуль 2: DOCX-обработка (src/docx_processing)
+
+- Извлечение структуры DOCX (название, авторы, аннотация, ключевые слова, текст, список литературы)
+- Приведение к единому шаблону конференции
+- Перенос таблиц и изображений
+
+### Модуль 3: PDF и редактор (src/tema)
+
+- Конвертация DOCX в PDF через LibreOffice
+- Упаковка результатов для автора
+- Редакторская панель
+- Управление выпусками
+- Сборка PDF-сборника
+- Публичный архив
+
+### Модуль 4: Автоматические проверки (src/content-validation)
+
+- 6 типов проверок на базе LLM
+- HTTP API для интеграции
+- CLI для ручного запуска
+- Структурированные результаты в JSON
+
+## Известные ограничения
+
+- Поддерживается только формат DOCX (не .doc)
+- Не обрабатываются сканированные PDF
+- Требуется установка LibreOffice для PDF-экспорта
+- Автоматические проверки требуют Google Gemini API key
+- Сложные Word-формулы могут обрабатываться некорректно
+
+## Разработка и расширение
+
+Система спроектирована модульно. Для добавления нового этапа обработки:
+
+1. Создайте класс-наследник `BaseWorkflowStage` в `src/system/submissions/base_stage.py`
+2. Зарегистрируйте этап в `plugin_registry.py`
+3. Добавьте вызов в `workflow.py`
+
+Каждый модуль имеет собственный README с подробной документацией:
+
+- `src/system/README.md`
+- `src/docx_processing/README.md`
+- `src/tema/README.md`
+- `src/content-validation/README.md`
+
+## Технологический стек
+
+**Backend:**
+- Python 3.11+
+- Django 5.0+
+- SQLite
+- python-docx, docxtpl (DOCX)
+- reportlab, pypdf (PDF)
+- LibreOffice (конвертация)
+
+**Автоматические проверки:**
+- C# .NET 10
+- Google Gemini API
+- System.CommandLine
+
+**Frontend:**
+- Django Templates
+- Базовый CSS
