@@ -273,6 +273,7 @@ def build_issue_collection(issue_id: str) -> dict[str, Any]:
 def delete_issue(issue_id: str) -> None:
     """Удаляет выпуск из архива вместе с файлами."""
     import shutil
+    from django.conf import settings
 
     issue = _get_issue_row(issue_id)
 
@@ -287,6 +288,11 @@ def delete_issue(issue_id: str) -> None:
             f"Невозможно удалить выпуск: в нём есть {included_count} материал(ов) "
             "в статусе 'included_in_issue' или 'published'. Сначала исключите материалы из выпуска."
         )
+
+    # Переназначаем все остальные материалы на дефолтный выпуск
+    default_issue_id = settings.ISSUE_DEFAULT_ID
+    if issue_id != default_issue_id:
+        Submission.objects.filter(issue_id=issue_id).update(issue_id=default_issue_id)
 
     # Удаляем директорию с файлами выпуска
     issue_dir = get_issues_dir(issue_id)
