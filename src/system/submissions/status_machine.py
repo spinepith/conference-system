@@ -29,7 +29,7 @@ ALLOWED_TRANSITIONS = {
     "editor_review": {"accepted", "rejected", "needs_revision", "needs_author_review", "error"},
     "accepted": {"included_in_issue", "published", "error"},
     "rejected": {"editor_review", "error"},
-    "included_in_issue": {"published", "error"},
+    "included_in_issue": {"published", "accepted", "error"},
     "published": {"error"},
     "error": {"uploaded", "needs_revision", "editor_review", "structure_extracted", "formatted", "auto_checking", "auto_checked", "needs_author_review"},
 }
